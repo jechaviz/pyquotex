@@ -1,17 +1,18 @@
+
 import time
 import math
 import logging
 import asyncio
 from datetime import datetime
+
 from . import expiration
 from . import global_value
-from .api import QuotexAPI
+from .api import QuotexWssApi
 from .constants import codes_asset
 from collections import defaultdict
 
 __version__ = "1.0.0"
 logger = logging.getLogger(__name__)
-
 
 def nested_dict(n, type):
     if n == 1:
@@ -19,40 +20,15 @@ def nested_dict(n, type):
     else:
         return defaultdict(lambda: nested_dict(n - 1, type))
 
-
 def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
+class QuotexStableApi(object):
 
-class Quotex(object):
-
-    def __init__(self, email, password, email_pass=None, resource_path=".", user_data_dir=None):
-        self.size = [
-            1,
-            5,
-            10,
-            15,
-            30,
-            60,
-            120,
-            300,
-            600,
-            900,
-            1800,
-            3600,
-            7200,
-            14400,
-            28800,
-            43200,
-            86400,
-            604800,
-            2592000
-        ]
-        self.email = email
-        self.password = password
-        self.email_pass = email_pass
-        self.resource_path = resource_path
-        self.user_data_dir = user_data_dir
+    def __init__(self, settings):
+        self.size = [1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600,
+                     7200, 14400, 28800, 43200, 86400, 604800, 2592000]
+        self.settings = settings
         self.set_ssid = None
         self.duration = None
         self.suspend = 0.5
@@ -67,36 +43,28 @@ class Quotex(object):
 
     @property
     def websocket(self):
-        """Property to get websocket.
-
-        :returns: The instance of :class:`WebSocket <websocket.WebSocket>`.
-        """
         return self.websocket_client.wss
 
     @staticmethod
-    def check_connect():
-        if global_value.check_websocket_if_connect == 0:
-            return False
-        else:
-            return True
+    def is_connected():
+        return False if global_value.check_websocket_if_connect == 0 else True
 
     async def re_subscribe_stream(self):
-        try:
-            for ac in self.subscribe_candle:
-                sp = ac.split(",")
-                await self.start_candles_one_stream(sp[0], sp[1])
-        except:
-            pass
-        try:
-            for ac in self.subscribe_candle_all_size:
-                await self.start_candles_all_size_stream(ac)
-        except:
-            pass
-        try:
-            for ac in self.subscribe_mood:
-                await self.start_mood_stream(ac)
-        except:
-            pass
+        subscriptions = [
+            (self.subscribe_candle, self.start_candles_one_stream, True),
+            (self.subscribe_candle_all_size, self.start_candles_all_size_stream, False),
+            (self.subscribe_mood, self.start_mood_stream, False)
+        ]
+        for subscription_list, start_method, split_needed in subscriptions:
+            try:
+                for subscription in subscription_list:
+                    if split_needed:
+                        asset, candle_size = subscription.split(",")
+                        await start_method(asset, candle_size)
+                    else:
+                        await start_method(subscription)
+            except:
+                pass
 
     async def get_instruments(self):
         await asyncio.sleep(self.suspend)
@@ -111,6 +79,10 @@ class Quotex(object):
                 logger.error('**error** api.get_instruments need reconnect')
                 await self.connect()
         return self.api.instruments
+
+    def get_all_instruments(self):
+        if self.api.instruments:
+            return self.api.instruments
 
     def get_all_asset_name(self):
         if self.api.instruments:
@@ -136,7 +108,7 @@ class Quotex(object):
         while True:
             try:
                 self.api.get_candles(codes_asset[asset], offset, period, index)
-                while self.check_connect and self.api.candles.candles_data is None:
+                while self.is_connected and self.api.candles.candles_data is None:
                     await asyncio.sleep(0.1)
                 if self.api.candles.candles_data is not None:
                     break
@@ -154,36 +126,26 @@ class Quotex(object):
         return self.api.candle_v2_data[asset]
 
     async def connect(self):
-        self.api = QuotexAPI(
-            "qxbroker.com",
-            self.email,
-            self.password,
-            email_pass=self.email_pass,
-            resource_path=self.resource_path,
-            user_data_dir=self.user_data_dir
-        )
+        self.api = QuotexWssApi(self.settings)
         self.api.trace_ws = self.debug_ws_enable
-        check, reason = await self.api.connect(self.account_is_demo)
-        if check:
+        is_connected, message = await self.api.connect(self.account_is_demo)
+        if is_connected:
             self.api.send_ssid()
             if global_value.check_accepted_connection == 0:
-                check, reason = await self.connect()
-                if not check:
-                    check, reason = check, "Acesso negado, sessão não existe!!!"
-        return check, reason
+                is_connected, message = await self.connect()
+                if not is_connected:
+                    is_connected, message = is_connected, "Session unset"
+        return is_connected, message
 
     def set_account_mode(self, balance_mode="PRACTICE"):
-        """Set active account `real` or `practice`"""
-        if balance_mode.upper() == "REAL":
-            self.account_is_demo = 0
-        elif balance_mode.upper() == "PRACTICE":
-            self.account_is_demo = 1
-        else:
+        acc_mode = {"REAL": 0, "PRACTICE": 1}
+        try:
+            self.account_is_demo = acc_mode[balance_mode.upper()]
+        except KeyError:
             logger.error("ERROR doesn't have this mode")
             exit(1)
 
     def change_account(self, balance_mode):
-        """Change active account `real` or `practice`"""
         self.account_is_demo = 0 if balance_mode.upper() == "REAL" else 1
 
     async def edit_practice_balance(self, amount=None):
@@ -204,62 +166,58 @@ class Quotex(object):
         return await self.api.get_profile()
 
     async def buy(self, amount, asset, direction, duration):
-        """Buy Binary option"""
         request_id = expiration.get_timestamp()
         self.api.current_asset = asset
         self.api.subscribe_realtime_candle(asset, duration)
         self.api.buy(amount, asset, direction, duration, request_id)
-        count = 0.1
-        while self.api.buy_id is None:
-            count += 0.1
-            if count > duration:
-                status_buy = False
-                break
-            await asyncio.sleep(0.1)
-            if global_value.check_websocket_if_error:
-                return False, global_value.websocket_error_reason
-        else:
-            status_buy = True
+
+        try:
+            await asyncio.wait_for(self._api_buy_id(), timeout=duration)
+            status_buy = True if self.api.buy_id is not None else False
+        except asyncio.TimeoutError:
+            status_buy = False
+        if global_value.check_websocket_if_error:
+            return False, global_value.websocket_error_reason
         return status_buy, self.api.buy_successful
 
+    async def _api_buy_id(self):
+        while self.api.buy_id is None:
+            await asyncio.sleep(0.1)
+
     async def sell_option(self, options_ids):
-        """Sell asset Quotex"""
         self.api.sell_option(options_ids)
         self.api.sold_options_respond = None
-        while self.api.sold_options_respond is None:
-            await asyncio.sleep(0.1)
+        try:
+            await asyncio.wait_for(self._api_sold_options(), timeout=10)
+        except asyncio.TimeoutError:
+            logger.error("Timeout while waiting for sold options response")
         return self.api.sold_options_respond
 
-    def get_payment(self):
-        """Payment Quotex server"""
-        assets_data = {}
-        for i in self.api.instruments:
-            assets_data[i[2]] = {
-                "turbo_payment": i[18],
-                "payment": i[5],
-                "open": i[14]
-            }
-        return assets_data
+    async def _api_sold_options(self):
+        while self.api.sold_options_respond is None:
+            await asyncio.sleep(0.1)
 
-    async def start_remaing_time(self):
+    def get_payment(self):
+        return {i[2]: {"turbo_payment": i[18], "payment": i[5], "open": i[14]} for i in self.api.instruments}
+
+    async def start_remaining_time(self):
         now_stamp = datetime.fromtimestamp(expiration.get_timestamp())
         expiration_stamp = datetime.fromtimestamp(self.api.timesync.server_timestamp)
-        remaing_time = int((expiration_stamp - now_stamp).total_seconds())
-        while remaing_time >= 0:
-            remaing_time -= 1
-            print(f"\rRestando {remaing_time if remaing_time > 0 else 0} segundos ...", end="")
-            await asyncio.sleep(1)
+        remaining_time = int((expiration_stamp - now_stamp).total_seconds())
+        try:
+            for i in range(remaining_time, -1, -1):
+                print(f"\rMissing {i if i > 0 else 0} seconds ...", end="")
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            print("\nCountdown was cancelled.")
 
     async def check_win(self, id_number):
-        """Check win based id"""
         await self.start_remaing_time()
         while True:
             try:
                 listinfodata_dict = self.api.listinfodata.get(id_number)
-                if listinfodata_dict["game_state"] == 1:
-                    break
-            except:
-                pass
+                if listinfodata_dict["game_state"] == 1: break
+            except: pass
         self.api.listinfodata.delete(id_number)
         return listinfodata_dict["win"]
 
@@ -299,8 +257,7 @@ class Quotex(object):
         self.api.candle_generated_check[str(asset)][int(size)] = {}
         while True:
             if time.time() - start > 20:
-                logger.error(
-                    '**error** start_candles_one_stream late for 20 sec')
+                logger.error('**error** start_candles_one_stream late for 20 sec')
                 return False
             try:
                 if self.api.candle_generated_check[str(asset)][int(size)]:

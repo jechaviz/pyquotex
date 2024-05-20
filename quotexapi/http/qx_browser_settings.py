@@ -1,7 +1,7 @@
-from ..http.navigator import Browser
+from ..http.navigator import Navigator
 
 
-class Settings(Browser):
+class QxBrowserSettings(Navigator):
 
     def __init__(self, api):
         super().__init__()
@@ -9,12 +9,10 @@ class Settings(Browser):
         self.api = api
         self.headers = self.get_headers()
 
-    def get_settings(self):
+    def get(self):
         self.headers["content-type"] = "application/json"
-        self.headers["Referer"] = "https://qxbroker.com/pt/trade"
+        self.headers["Referer"] = "https://qxbroker.com/en/trade"
         self.headers["cookie"] = self.api.session_data["cookies"]
         self.headers["User-Agent"] = self.api.session_data["user_agent"]
-        response = self.send_request("GET",
-                                     "https://qxbroker.com/api/v1/cabinets/digest"
-                                     )
+        response = self.send_request("GET","https://qxbroker.com/api/v1/cabinets/digest")
         return response.json()

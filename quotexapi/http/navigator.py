@@ -11,11 +11,11 @@ retry_strategy = Retry(
     status_forcelist=[429, 500, 502, 503, 504, 104],
     allowed_methods=["HEAD", "POST", "PUT", "GET", "OPTIONS"]
 )
+
 adapter = HTTPAdapter(max_retries=retry_strategy)
 user_agent_list = agents.split("\n")
 
-
-class Browser(object):
+class Navigator(object):
     response = None
     headers = None
 

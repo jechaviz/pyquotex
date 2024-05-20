@@ -3,15 +3,20 @@ import os
 import time
 import json
 import ssl
+from pathlib import Path
+
 import urllib3
 import certifi
 import logging
 import platform
 import threading
+
+from websocket import WebSocketConnectionClosedException
+
 from . import global_value
-from .http.login import Login
-from .http.logout import Logout
-from .http.settings import Settings
+from .http.qx_login import Login
+from .http.qx_logout import Logout
+from .http.qx_browser_settings import QxBrowserSettings
 from .ws.channels.ssid import Ssid
 from .ws.channels.buy import Buy
 from .ws.channels.candles import GetCandles
@@ -39,7 +44,7 @@ def nested_dict(n, type):
         return defaultdict(lambda: nested_dict(n - 1, type))
 
 
-class QuotexAPI(object):
+class QuotexWssApi(object):
     """Class for communication with Quotex API."""
     socket_option_opened = {}
     buy_id = None
@@ -59,22 +64,8 @@ class QuotexAPI(object):
     candles = Candles()
     profile = Profile()
 
-    def __init__(self,
-                 host,
-                 username,
-                 password,
-                 email_pass=None,
-                 proxies=None,
-                 resource_path=None,
-                 user_data_dir=None):
-        """
-        :param str host: The hostname or ip address of a Quotex server.
-        :param str username: The username of a Quotex server.
-        :param str password: The password of a Quotex server.
-        :param str email_pass: The password of a Email.
-        :param proxies: The proxies of a Quotex server.
-        :param user_data_dir: The path browser user data dir.
-        """
+    def __init__(self,settings):
+        self.settings = settings
         self.wss_message = None
         self.websocket_thread = None
         self.websocket_client = None
@@ -82,13 +73,8 @@ class QuotexAPI(object):
         self.object_id = None
         self.token_login2fa = None
         self._temp_status = ""
-        self.username = username
-        self.password = password
-        self.email_pass = email_pass
-        self.resource_path = resource_path
-        self.user_data_dir = user_data_dir
-        self.proxies = proxies
-        self.wss_host = host
+        self.proxies = settings.get("proxies")
+        self.wss_host = settings.get("host")
         self.settings_list = {}
         self.signal_data = {}
         self.get_candle_data = {}
@@ -128,34 +114,18 @@ class QuotexAPI(object):
 
     @property
     def logout(self):
-        """Property for get Quotex http login resource.
-        :returns: The instance of :class:`Login
-            <quotexapi.http.login.Login>`.
-        """
         return Logout(self)
 
     @property
     def login(self):
-        """Property for get Quotex http login resource.
-        :returns: The instance of :class:`Login
-            <quotexapi.http.login.Login>`.
-        """
         return Login(self)
 
     @property
     def ssid(self):
-        """Property for get Quotex websocket ssid channel.
-        :returns: The instance of :class:`Ssid
-            <Quotex.ws.channels.ssid.Ssid>`.
-        """
         return Ssid(self)
 
     @property
     def buy(self):
-        """Property for get Quotex websocket ssid channel.
-        :returns: The instance of :class:`Buy
-            <Quotex.ws.channels.buy.Buy>`.
-        """
         return Buy(self)
 
     @property
@@ -164,31 +134,30 @@ class QuotexAPI(object):
 
     @property
     def get_candles(self):
-        """Property for get Quotex websocket candles channel.
-
-        :returns: The instance of :class:`GetCandles
-            <quotexapi.ws.channels.candles.GetCandles>`.
-        """
         return GetCandles(self)
 
     async def get_profile(self):
-        settings = Settings(self)
-        user_settings = settings.get_settings()
-        self.profile.nick_name = user_settings.get("data")["nickname"]
-        self.profile.profile_id = user_settings.get("data")["id"]
-        self.profile.demo_balance = user_settings.get("data")["demoBalance"]
-        self.profile.live_balance = user_settings.get("data")["liveBalance"]
-        self.profile.avatar = user_settings.get("data")["avatar"]
-        self.profile.currency_code = user_settings.get("data")["currencyCode"]
-        self.profile.country = user_settings.get("data")["country"]
-        self.profile.country_name = user_settings.get("data")["countryName"]
-        self.profile.currency_symbol = user_settings.get("data")["currencySymbol"]
+        qx_browser_settings = QxBrowserSettings(self)
+        profile = qx_browser_settings.get().get("data")
+        self.profile.nick_name = profile["nickname"]
+        self.profile.profile_id = profile["id"]
+        self.profile.demo_balance = profile["demoBalance"]
+        self.profile.live_balance = profile["liveBalance"]
+        self.profile.avatar = profile["avatar"]
+        self.profile.currency_code = profile["currencyCode"]
+        self.profile.country = profile["country"]
+        self.profile.country_name = profile["countryName"]
+        self.profile.currency_symbol = profile["currencySymbol"]
         return self.profile
 
     async def check_session(self):
-        if os.path.isfile(os.path.join(self.resource_path, "session.json")):
-            with open(os.path.join(self.resource_path, "session.json")) as file:
-                self.session_data = json.loads(file.read())
+        resource_path = self.settings.get("resource_path")
+        if os.path.isfile(os.path.join(resource_path, "session.json")):
+            try:
+                with open(os.path.join(resource_path, "session.json")) as file:
+                    self.session_data = json.loads(file.read())
+            except Exception as e:
+                logger.error(e)
 
     def send_websocket_request(self, data, no_force_send=True):
         """Send websocket request to Quotex server.
@@ -199,7 +168,11 @@ class QuotexAPI(object):
                or global_value.ssl_Mutual_exclusion_write) and no_force_send:
             pass
         global_value.ssl_Mutual_exclusion_write = True
-        self.websocket.send(data)
+        try:
+            self.websocket.send(data)
+        except WebSocketConnectionClosedException as wscce:
+            self.connect()
+            self.websocket.send(data)
         logger.debug(data)
         global_value.ssl_Mutual_exclusion_write = False
 
@@ -214,15 +187,10 @@ class QuotexAPI(object):
     async def autenticate(self):
         await self.check_session()
         if not self.session_data.get("token"):
-            print("Autenticando usuário...")
-            await self.login(
-                self.username,
-                self.password,
-                self.email_pass,
-                self.user_data_dir
-            )
+            print("Logging in ... ", end="")
+            await self.login(self.settings)
             if self.session_data.get("token"):
-                print("Login realizado com sucesso!!!")
+                print("✅ OK")
 
     async def start_websocket(self, reconnect):
         if not reconnect:
@@ -256,11 +224,11 @@ class QuotexAPI(object):
                 if global_value.check_websocket_if_error:
                     return False, global_value.websocket_error_reason
                 elif global_value.check_websocket_if_connect == 0:
-                    logger.debug("Websocket conexão fechada.")
-                    return False, "Websocket conexão fechada."
+                    logger.debug("Websocket connection closed.")
+                    return False, "Websocket connection closed."
                 elif global_value.check_websocket_if_connect == 1:
-                    logger.debug("Websocket conectado com sucesso!!!")
-                    return True, "Websocket conectado com sucesso!!!"
+                    logger.debug("Websocket successfully connected!!!")
+                    return True, "Websocket successfully connected!!!"
             except:
                 pass
             pass
@@ -278,7 +246,7 @@ class QuotexAPI(object):
             return False
         return True
 
-    async def connect(self, is_demo, reconnect=False):
+    async def connect(self, is_demo=1, reconnect=False):
         """Method for connection to Quotex API."""
         self.account_type = is_demo
         global_value.ssl_Mutual_exclusion = False
@@ -295,7 +263,6 @@ class QuotexAPI(object):
         return check_websocket, websocket_reason
 
     async def reconnect(self):
-        """Method for connection to Quotex API."""
         logger.info("Websocket Reconnection...")
         await self.start_websocket(reconnect=True)
 
