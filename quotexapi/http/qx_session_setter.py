@@ -13,17 +13,17 @@ from .web_browser import WebBrowser
 class QxSessionSetter:
     def __init__(self, api):
         self.browser = None
-        self.password = None
+        self.qx_pass = None
         self.base_url = None
-        self.username = None
+        self.qx_email = None
         self.https_base_url = None
         self.api = api
 
     def load_settings(self, settings):
         self.base_url = settings.get('base_url')
         self.https_base_url = f'https://{self.base_url}'
-        self.username = settings.get('email')
-        self.password = settings.get('password')
+        self.qx_email = settings.get('qx_email')
+        self.qx_pass = settings.get('qx_pass')
         self.browser = WebBrowser(settings)
 
     async def go_to_sign_in_page(self):
@@ -39,8 +39,8 @@ class QxSessionSetter:
         await self.browser.page.get_by_role(role, name=name).fill(value)
 
     async def fill_sign_in_form(self):
-        await self.fill_form_field("textbox", "Email", self.username)
-        await self.fill_form_field("textbox", "Password", self.password)
+        await self.fill_form_field("textbox", "Email", self.qx_email)
+        await self.fill_form_field("textbox", "Password", self.qx_pass)
 
     async def submit_sign_in_form(self):
         await self.browser.page.get_by_role("button", name="Sign In").click()

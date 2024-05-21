@@ -112,7 +112,7 @@ class QuotexService:
         [f'{attr}: {getattr(profile, attr)}' for attr in dir(profile) if not attr.startswith('_') and not getattr(profile,attr) is None])
       print(profile_description)
 
-  async def get_realtime_candle(self, asset, list_size):
+  async def get_realtime_candle(self, asset='AUDNZD_otc', list_size=10):
     if await self.get_asset_status(asset):
       self.client.start_candles_stream(asset)
       while True:
