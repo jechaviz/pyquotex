@@ -1,6 +1,6 @@
 from quotexapi.http.navigator import Navigator
 
-class QxBrowser(Navigator):
+class QxBrowserSettings(Navigator):
     def __init__(self, api):
         super().__init__()
         self.api = api

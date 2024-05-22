@@ -1,15 +1,14 @@
-
 import time
 import math
-import logging
 import asyncio
+import logging
 from datetime import datetime
+from collections import defaultdict
 
 from . import expiration
 from . import global_value
 from .api import QuotexWssApi
 from .constants import codes_asset
-from collections import defaultdict
 
 __version__ = "1.0.0"
 logger = logging.getLogger(__name__)
@@ -24,7 +23,6 @@ def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
 class QuotexStableApi(object):
-
     def __init__(self, settings):
         self.size = [1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600,
                      7200, 14400, 28800, 43200, 86400, 604800, 2592000]
