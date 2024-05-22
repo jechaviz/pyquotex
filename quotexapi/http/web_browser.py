@@ -1,5 +1,4 @@
-from ..utils.playwright_install import install
-from playwright.async_api import Playwright, async_playwright, expect
+from playwright.async_api import Playwright
 from playwright_stealth import stealth_async
 class WebBrowser:
     def __init__(self, settings):

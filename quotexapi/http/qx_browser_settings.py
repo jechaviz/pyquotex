@@ -1,18 +1,19 @@
-from ..http.navigator import Navigator
+from quotexapi.http.navigator import Navigator
 
-
-class QxBrowserSettings(Navigator):
-
+class QxBrowser(Navigator):
     def __init__(self, api):
         super().__init__()
-        self.set_headers()
         self.api = api
-        self.headers = self.get_headers()
+        self._set_api_headers()
+
+    def _set_api_headers(self):
+        self.add_headers({
+            "content-type": "application/json",
+            "Referer": "https://qxbroker.com/en/trade",
+            "cookie": self.api.session_data["cookies"],
+            "User-Agent": self.api.session_data["user_agent"]
+        })
 
     def get(self):
-        self.headers["content-type"] = "application/json"
-        self.headers["Referer"] = "https://qxbroker.com/en/trade"
-        self.headers["cookie"] = self.api.session_data["cookies"]
-        self.headers["User-Agent"] = self.api.session_data["user_agent"]
-        response = self.send_request("GET","https://qxbroker.com/api/v1/cabinets/digest")
-        return response.json()
+        response = self.send_request("GET", "https://qxbroker.com/api/v1/cabinets/digest")
+        return response.json() if response.ok else None

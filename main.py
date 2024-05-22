@@ -5,7 +5,7 @@ import random
 import asyncio
 from pathlib import Path
 
-from Util.tz_util import TZUtil
+from utils.tz_util import TZUtil
 from settings.settings import Settings
 from quotexapi.stable_api import QuotexStableApi
 

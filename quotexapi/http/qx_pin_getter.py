@@ -1,10 +1,7 @@
-import asyncio
 import re
 from pathlib import Path
-
 from bs4 import BeautifulSoup
-
-from quotexapi.http.mail import ImapClient
+from utils.imap_client import ImapClient
 from settings.settings import Settings
 
 class QuotexPinGetter:
@@ -36,6 +33,7 @@ class QuotexPinGetter:
       pin_match = re.search(r'<b>(\d{4,6})</b>', html)
       return pin_match.group(1)
     return None
+
   def extract_pin(self, html):
     if self.is_pin_email(html):
       dom = BeautifulSoup(html, "html.parser")
