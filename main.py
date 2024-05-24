@@ -3,22 +3,18 @@ import csv
 import json
 import random
 import asyncio
+import pandas as pd
 from pathlib import Path
 
 from utils.tz_util import TZUtil
 from settings.settings import Settings
 from quotexapi.stable_api import QuotexStableApi
 
-
-# client.debug_ws_enable = True
-# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
-# PRACTICE mode is default / REAL mode is optional
-# client.set_account_mode("REAL")
-
 class QuotexService:
   def __init__(self, settings):
     self.client = QuotexStableApi(settings)
     self.tz_util = TZUtil(settings.get('timezone'))
+    self.asset = settings.get('asset')
 
   async def connect(self, attempts=8):
     print("..", end="")
@@ -41,7 +37,6 @@ class QuotexService:
       await asyncio.sleep(5)
     return False, 'Connection Failed'
 
-
   async def create_orders(self, order_list, orders=10):
     is_connected, message = await self.connect()
     for i in range(0, orders):
@@ -57,19 +52,6 @@ class QuotexService:
       await asyncio.sleep(2)
     print('\n/', 80 * '=', '/', end='\n')
 
-  async def get_asset_status(self, asset):
-    is_connected, message = await self.connect()
-    if not is_connected: return False
-    asset_query = await self.asset_parse(asset)
-    asset_open = self.client.check_asset_open(asset_query)[2]
-    print('✅ Asset open') if asset_open else print('❌ Asset closed.')
-    return True
-
-  async def get_balance(self):
-    is_connected, message = await self.connect()
-    if is_connected:
-      print('Current Balance: ', await self.client.get_balance())
-
   async def get_candle(self, asset = 'AUDNZD_otc', offset = 180, period=60):
     await self.get_asset_status(asset)
     candles = await self.client.get_candles(asset, offset, period)
@@ -83,6 +65,63 @@ class QuotexService:
         await self.write_to_csv('./data/candles.csv', candle)
       print(candles)
 
+  async def get_realtime_candle(self, asset='AUDNZD_otc', list_size=10):
+    if await self.get_asset_status(asset):
+      self.client.start_candles_stream(asset)
+      ticks = []
+      while True:
+        ticks = self.client.get_realtime_candles(asset)
+        if len(ticks[asset]) == list_size:
+          return ticks[asset]
+
+  def create_ohlc_data(self, ticks):
+    ohlc_data = []
+    for tick in ticks:
+      timestamp = self.tz_util.utc_to_local(tick['time'])
+      ohlc_data.append({
+        "Datetime": timestamp,
+        "Open": tick['open'],
+        "High": tick['high'],
+        "Low": tick['low'],
+        "Close": tick['price']
+      })
+    return ohlc_data
+
+  async def calculate_ohlc(self, data, interval):
+    df = pd.DataFrame(data)
+    df["Datetime"] = pd.to_datetime(df["Datetime"])
+    df.set_index("Datetime", inplace=True)
+    ohlc_df = df.groupby(pd.Grouper(freq=interval)).apply(
+      lambda x: pd.Series({
+        "Open": x["Open"].iloc[0],
+        "High": x["High"].max(),
+        "Low": x["Low"].min(),
+        "Close": x["Close"].iloc[-1]
+      })
+    )
+    return ohlc_df
+
+  async def get_latest_olhc(self):
+    ticks = await self.get_realtime_candle()
+    ohlc_data = self.create_ohlc_data(ticks)
+    ohlc_df = await self.calculate_ohlc(ohlc_data, "5s")
+    await self.print_and_write_to_csv(ohlc_df)
+
+  async def print_and_write_to_csv(self, ohlc_df):
+    for _, row in ohlc_df.iterrows():
+      print(f"O: {row['Open']}, H: {row['High']}, L: {row['Low']}, C: {row['Close']}")
+      await self.write_to_csv('./data/real_time_candle.csv',
+                              f"Open: {row['Open']}, High: {row['High']}, Low: {row['Low']}, Close: {row['Close']}")
+    print()  # Add an empty row between each interval
+
+  async def get_asset_status(self, asset):
+    is_connected, message = await self.connect()
+    if not is_connected: return False
+    asset_query = await self.asset_parse(asset)
+    asset_open = self.client.check_asset_open(asset_query)[2]
+    print('✅ Asset open') if asset_open else print('❌ Asset closed.')
+    return True
+
   async def get_open_assets(self):
     is_connected, message = await self.connect()
     open_assets = []
@@ -94,6 +133,12 @@ class QuotexService:
           open_assets.append(open_asset)
           print(f'{payment}% -',asset)
     return open_assets
+
+
+  async def get_balance(self):
+    is_connected, message = await self.connect()
+    if is_connected:
+      print('Current Balance: ', await self.client.get_balance())
 
   async def get_payment(self, filter_open=True, sort_by_payment=True):
     is_connected, message = await self.connect()
@@ -111,17 +156,6 @@ class QuotexService:
       profile_description = '\n'.join(
         [f'{attr}: {getattr(profile, attr)}' for attr in dir(profile) if not attr.startswith('_') and not getattr(profile,attr) is None])
       print(profile_description)
-
-  async def get_realtime_candle(self, asset='AUDNZD_otc', list_size=10):
-    if await self.get_asset_status(asset):
-      self.client.start_candles_stream(asset)
-      while True:
-        prices = self.client.get_realtime_candles(asset)
-        if len(prices[asset]) == list_size:
-          break
-        for price in prices:
-          await self.write_to_csv('./data/real_time_candle.csv', price)
-      print(prices)
 
   async def get_realtime_sentiment(self, asset):
     if await self.get_asset_status(asset):
@@ -164,14 +198,10 @@ class QuotexService:
     else:
       print('Operation failed!!!')
 
-  async def get_instruments(self):
-    print(self.client.get_all_instruments())
-
   async def write_to_csv(self, filename, data):
     with open(filename, 'a', newline='', encoding='utf-8') as file:
       writer = csv.writer(file)
       writer.writerow(data)
-
 
 class QuotexCLI:
   def __init__(self, service):
@@ -185,12 +215,11 @@ class QuotexCLI:
       'payment': self.service.get_payment,
       'candle': self.service.get_candle,
       'candle2': self.service.get_candle_v2,
-      'last_candle': self.service.get_realtime_candle,
+      'last_candle': self.service.get_latest_olhc,
       'sentiments': self.service.get_realtime_sentiment,
       'open_assets': self.service.get_open_assets,
       'set_balance': self.service.set_balance,
-      'create_orders': self.service.create_orders,
-      'instruments': self.service.get_instruments
+      'create_orders': self.service.create_orders
     }
     return options
 
@@ -240,14 +269,6 @@ if __name__ == '__main__':
   order_list = [
     {'amount': 5, 'asset': 'EURUSD_otc', 'direction': 'call', 'duration': 60},
     {'amount': 10, 'asset': 'AUDCAD_otc', 'direction': 'put', 'duration': 60},
-    {'amount': 15, 'asset': 'AUDJPY_otc', 'direction': 'call', 'duration': 60},
-    {'amount': 20, 'asset': 'AUDUSD_otc', 'direction': 'put', 'duration': 60},
-    {'amount': 25, 'asset': 'CADJPY_otc', 'direction': 'call', 'duration': 60},
-    {'amount': 30, 'asset': 'EURCHF_otc', 'direction': 'put', 'duration': 60},
-    {'amount': 35, 'asset': 'EURGBP_otc', 'direction': 'call', 'duration': 60},
-    {'amount': 40, 'asset': 'EURJPY_otc', 'direction': 'put', 'duration': 60},
-    {'amount': 45, 'asset': 'GBPAUD_otc', 'direction': 'call', 'duration': 60},
-    {'amount': 50, 'asset': 'GBPJPY_otc', 'direction': 'put', 'duration': 60},
   ]
   settings = Settings(Path('./settings/config.yml'))
   service = QuotexService(settings)

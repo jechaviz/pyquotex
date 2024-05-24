@@ -28,14 +28,17 @@ class QuotexPinGetter:
     finally:
       self.imap_client.disconnect()
 
+  def is_pin_email(self, html):
+    return any(str in html for str in ['PIN', 'Pin', 'pin'])
+
   def extract_pin2(self, html):
-    if 'PIN' in html:
+    if self.is_pin_email(html):
       pin_match = re.search(r'<b>(\d{4,6})</b>', html)
       return pin_match.group(1)
     return None
 
   def extract_pin(self, html):
-    if 'PIN' in html:
+    if self.is_pin_email(html):
       dom = BeautifulSoup(html, "html.parser")
       return dom.find("b").get_text()
     return None

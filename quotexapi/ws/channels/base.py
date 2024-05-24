@@ -13,4 +13,4 @@ class Base(object):
         :param str data: The websocket channel data.
         :returns: The instance of :class:`requests.Response`.
         """
-        return self.api.send_websocket_request(data)
+        return self.api.send_request(data)

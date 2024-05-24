@@ -46,6 +46,7 @@ class QuotexWssApi:
         self.websocket_client = None
         self.websocket_thread = None
         self.wss_message = None
+        self.profit_in_operation = None
 
     @property
     def websocket(self):
@@ -103,8 +104,11 @@ class QuotexWssApi:
     async def check_session(self):
         session_file = os.path.join(self.settings.get("resource_path"), "session.json")
         if os.path.isfile(session_file):
-            with open(session_file) as file:
-                self.session_data = json.loads(file.read())
+            try:
+                with open(session_file) as file:
+                    self.session_data = json.loads(file.read())
+            except Exception as e:
+                logger.error(e)
 
     async def autenticate(self):
         await self.check_session()
@@ -163,7 +167,10 @@ class QuotexWssApi:
         if global_value.check_websocket_if_connect:
             logger.info("Closing websocket connection...")
             self.close()
-        return await self.start_websocket(reconnect)
+        check_websocket, websocket_reason = await self.start_websocket(reconnect)
+        if check_websocket and not global_value.SSID:
+            global_value.SSID = self.session_data.get("token")
+        return check_websocket, websocket_reason
 
     async def reconnect(self):
         logger.info("Websocket Reconnection...")
