@@ -19,7 +19,7 @@ class QuotexPinGetter:
       for html_part in self.imap_client.get_email_text_parts(raw_email):
         pin = self.extract_pin(html_part)
         if pin:
-          # self.imap_client.delete_email(email_uid) # TODO: doesn't delete email, no errors thrown.
+          self.imap_client.delete_email(email_uid)
           return pin
       return None
     except Exception as e:

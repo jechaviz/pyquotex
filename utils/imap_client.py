@@ -54,7 +54,7 @@ class ImapClient:
   def delete_email(self, email_uid):
     try:
       self.connect()
-      self.connection.uid('STORE', email_uid, '+FLAGS', '(\\Deleted)')
+      self.connection.uid('STORE', email_uid, '+FLAGS', '\\Deleted')
       self.connection.expunge()
     except Exception as e:
       print(f"Error deleting email with UID {email_uid}: {e}")
