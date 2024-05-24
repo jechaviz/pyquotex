@@ -148,6 +148,8 @@ class QuotexWssApi:
                 logger.debug("Websocket successfully connected.")
                 return True, "Websocket successfully connected."
 
+    import time
+
     def send_ssid(self):
         self.wss_message = None
         if not global_value.SSID:
@@ -156,9 +158,12 @@ class QuotexWssApi:
                 os.remove(session_file)
             return False
         self.ssid(global_value.SSID)
+        start_time = time.time()
+        timeout = 15
         while not self.wss_message:
+            if time.time() - start_time > timeout: return False
             time.sleep(0.3)
-        return bool(self.wss_message)
+        return self.wss_message
 
     async def connect(self, is_demo=1, reconnect=False):
         self.account_type = is_demo

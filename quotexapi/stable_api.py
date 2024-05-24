@@ -38,6 +38,7 @@ class QuotexStableApi(object):
         self.websocket_thread = None
         self.debug_ws_enable = False
         self.api = None
+        self.api_data = None
 
     @property
     def websocket(self):
@@ -45,7 +46,7 @@ class QuotexStableApi(object):
 
     @staticmethod
     def is_connected():
-        return False if global_value.check_websocket_if_connect == 0 else True
+        return False if global_value.check_websocket_if_connect in [None, 0] else True
 
     async def re_subscribe_stream(self):
         subscriptions = [
@@ -124,11 +125,12 @@ class QuotexStableApi(object):
         return self.api.candle_v2_data[asset]
 
     async def connect(self):
+        if self.is_connected(): return True, 'OK'
         self.api = QuotexWssApi(self.settings)
         self.api.trace_ws = self.debug_ws_enable
         is_connected, message = await self.api.connect(self.account_is_demo)
         if is_connected:
-            self.api.send_ssid()
+            self.api_data = self.api.send_ssid()
             if global_value.check_accepted_connection == 0:
                 is_connected, message = await self.connect()
                 if not is_connected:

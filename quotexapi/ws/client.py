@@ -56,7 +56,7 @@ class WebsocketClient(object):
                 message = message[1:].decode()
                 logger.debug(message)
                 message = json.loads(message)
-                self.api.wss_message = message
+                self.api.api_data = message
                 if "call" in str(message) or 'put' in str(message):
                     self.api.instruments = message
                 if message.get("signals"):
@@ -98,7 +98,7 @@ class WebsocketClient(object):
                     if global_value.websocket_error_reason == "not_money":
                         self.api.account_balance = {"liveBalance": 0}
                 elif not message.get("list") == []:
-                    self.api.wss_message = message
+                    self.api.api_data = message
             except:
                 pass
             if str(message) == "41":

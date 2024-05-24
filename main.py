@@ -12,21 +12,25 @@ from quotexapi.stable_api import QuotexStableApi
 
 class QuotexService:
   def __init__(self, settings):
+    self.is_connected = None
     self.client = QuotexStableApi(settings)
     self.tz_util = TZUtil(settings.get('timezone'))
     self.asset = settings.get('asset')
 
   async def connect(self, attempts=8):
-    print("..", end="")
+    if self.is_connected: return True, 'OK'
     for attempt in range(attempts + 1):
       if attempt == 0 or not self.client.is_connected():
         print(".", end="")
-        is_connected, message = await self.client.connect()
-        if is_connected:
+        self.is_connected, message = await self.client.connect()
+        if self.is_connected:
           print()
           return True, message
         elif 'Handshake status 403 Forbidden' in message:
           continue
+        elif 'getaddrinfo failed' in message:
+          print('Site not reachable, check internet.')
+          exit(1)
         else:
           print(message)
       else:
@@ -65,54 +69,29 @@ class QuotexService:
         await self.write_to_csv('./data/candles.csv', candle)
       print(candles)
 
-  async def get_realtime_candle(self, asset='AUDNZD_otc', list_size=10):
-    if await self.get_asset_status(asset):
+  async def get_realtime_candle(self, asset='AUDNZD_otc', list_size=30):
+    connected = await self.get_asset_status(asset)
+    if connected:
       self.client.start_candles_stream(asset)
-      ticks = []
       while True:
         ticks = self.client.get_realtime_candles(asset)
         if len(ticks[asset]) == list_size:
           return ticks[asset]
 
-  def create_ohlc_data(self, ticks):
-    ohlc_data = []
-    for tick in ticks:
-      timestamp = self.tz_util.utc_to_local(tick['time'])
-      ohlc_data.append({
-        "Datetime": timestamp,
-        "Open": tick['open'],
-        "High": tick['high'],
-        "Low": tick['low'],
-        "Close": tick['price']
-      })
-    return ohlc_data
-
   async def calculate_ohlc(self, data, interval):
-    df = pd.DataFrame(data)
-    df["Datetime"] = pd.to_datetime(df["Datetime"])
-    df.set_index("Datetime", inplace=True)
-    ohlc_df = df.groupby(pd.Grouper(freq=interval)).apply(
-      lambda x: pd.Series({
-        "Open": x["Open"].iloc[0],
-        "High": x["High"].max(),
-        "Low": x["Low"].min(),
-        "Close": x["Close"].iloc[-1]
-      })
-    )
+    ticks_df = pd.DataFrame(data)
+    ticks_df['time'] = ticks_df['time'].apply(lambda t: self.tz_util.utc_to_local(t))
+    ticks_df.set_index(pd.DatetimeIndex(ticks_df['time']), inplace=True)
+    ohlc_df = ticks_df['price'].resample(interval).agg({'o': 'first', 'c': 'last', 'h': 'max', 'l': 'min'})
+    ticks_df.reset_index(drop=True, inplace=True)
+    print(ticks_df)
+    print(ohlc_df)
+    ohlc_df.to_csv('./data/ohlc.csv', mode='a', header=False)
     return ohlc_df
 
   async def get_latest_olhc(self):
     ticks = await self.get_realtime_candle()
-    ohlc_data = self.create_ohlc_data(ticks)
-    ohlc_df = await self.calculate_ohlc(ohlc_data, "5s")
-    await self.print_and_write_to_csv(ohlc_df)
-
-  async def print_and_write_to_csv(self, ohlc_df):
-    for _, row in ohlc_df.iterrows():
-      print(f"O: {row['Open']}, H: {row['High']}, L: {row['Low']}, C: {row['Close']}")
-      await self.write_to_csv('./data/real_time_candle.csv',
-                              f"Open: {row['Open']}, High: {row['High']}, Low: {row['Low']}, Close: {row['Close']}")
-    print()  # Add an empty row between each interval
+    ohlc_df = await self.calculate_ohlc(ticks, '5s')
 
   async def get_asset_status(self, asset):
     is_connected, message = await self.connect()
