@@ -102,19 +102,19 @@ class QuotexStableApi(object):
         else:
             period = index
         self.api.current_asset = asset
-        self.api.candles.candles_data = None
+        self.api.candles._list = None
         self.start_candles_stream(asset)
         while True:
             try:
                 self.api.get_candles(codes_asset[asset], offset, period, index)
-                while self.is_connected and self.api.candles.candles_data is None:
+                while self.is_connected and self.api.candles._list is None:
                     await asyncio.sleep(0.1)
-                if self.api.candles.candles_data is not None:
+                if self.api.candles._list is not None:
                     break
             except:
                 logger.error('**error** get_candles need reconnect')
                 await self.connect()
-        return self.api.candles.candles_data
+        return self.api.candles._list
 
     async def get_candle_v2(self, asset, period):
         self.api.candle_v2_data[asset] = None

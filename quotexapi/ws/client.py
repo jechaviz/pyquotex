@@ -107,7 +107,7 @@ class WebsocketClient():
 
     def handle_candles(self, message):
         if message.get('index'):
-            self.api.candles.candles_data = message
+            self.api.candles._list = message
 
     def handle_buy(self, message):
         if message.get('id'):
@@ -151,7 +151,7 @@ class WebsocketClient():
             self.api.settings_list = message
             self.api._temp_status = ''
         elif self.api._temp_status == """451-['history/list/v2',{'_placeholder':true,'num':0}]""":
-            self.api.candles.candles_data = message['candles']
+            self.api.candles._list = message['candles']
             self.api.candle_v2_data[message['asset']] = message
             self.api.candle_v2_data[message['asset']]['candles'] = [{'t': d[0],'o': d[1],'c': d[2],'h': d[3], 'l': d[4]} 
                                                                     for d in message['candles']]
