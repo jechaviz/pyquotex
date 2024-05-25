@@ -16,7 +16,7 @@ class WebsocketClient():
         self.headers = {'User-Agent': self.api.session_data.get('user_agent')}
         websocket.enableTrace(self.api.trace_ws)
         self.ws = websocket.WebSocketApp(
-            f'wss://ws2.{self.api.wss_host}/socket.io/?EIO=3&transport=websocket',
+            f'wss://ws2.{self.api.ws_host}/socket.io/?EIO=3&transport=websocket',
             on_message=self.on_message,
             on_error=self.on_error,
             on_close=self.on_close,
@@ -177,19 +177,19 @@ class WebsocketClient():
         self.ws.send("42['indicator/list']")
         self.ws.send("42['drawing/load']")
         self.ws.send("42['pending/list']")
-        # self.wss.send("42['instruments/update',{'asset':'EURUSD','period':60}]")
+        # self.ws.send("42['instruments/update',{'asset':'EURUSD','period':60}]")
         self.ws.send("42['chart_notification/get']")
-        # self.wss.send("42['depth/follow','EURUSD']")
+        # self.ws.send("42['depth/follow','EURUSD']")
         self.ws.send("42['tick']")
 
     def on_close(self, ws, close_status_code, close_msg):
         logger.info('Websocket client disconnected.')
         global_value.check_websocket_if_connect = 0
 
-    def on_ping(self, wss, ping_msg):
+    def on_ping(self, ws, ping_msg):
         pass
 
-    def on_pong(self, wss, pong_msg):
+    def on_pong(self, ws, pong_msg):
         self.ws.send('2')
 
     def handle_remaining(self, message):

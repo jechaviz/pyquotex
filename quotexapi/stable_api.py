@@ -7,7 +7,7 @@ from collections import defaultdict
 
 from . import expiration
 from . import global_value
-from .api import QuotexWssApi
+from .api import QuotexWsApi
 from .constants import codes_asset
 
 __version__ = "1.0.0"
@@ -126,7 +126,7 @@ class QuotexStableApi(object):
 
     async def connect(self):
         if self.is_connected(): return True, 'OK'
-        self.api = QuotexWssApi(self.settings)
+        self.api = QuotexWsApi(self.settings)
         self.api.trace_ws = self.debug_ws_enable
         is_connected, message = await self.api.connect(self.account_is_demo)
         if is_connected:

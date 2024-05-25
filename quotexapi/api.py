@@ -32,11 +32,11 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 os.environ['WEBSOCKET_CLIENT_CA_BUNDLE'] = certifi.where()
 
 
-class QuotexWssApi:
+class QuotexWsApi:
     def __init__(self, settings):
         self.settings = settings
-        self.proxies = settings.get("proxies")
-        self.wss_host = settings.get("host")
+        self.proxies = settings.get('proxies')
+        self.ws_host = settings.get('host')
         self.session_data = {}
         self.realtime_price = {}
         self.profile = Profile()
@@ -50,7 +50,7 @@ class QuotexWssApi:
 
     @property
     def websocket(self):
-        return self.websocket_client.wss
+        return self.websocket_client.ws
 
     def send_request(self, data):
         while global_value.ssl_Mutual_exclusion or global_value.ssl_Mutual_exclusion_write:
@@ -66,43 +66,43 @@ class QuotexWssApi:
 
     def subscribe_realtime_candle(self, asset, period):
         self.realtime_price[asset] = []
-        data = f'42["instruments/update", {json.dumps({"asset": asset, "period": period})}]'
+        data = f"42['instruments/update', {json.dumps({'asset': asset, 'period': period})}]"
         self.send_request(data)
 
     def follow_candle(self, asset):
-        data = f'42["depth/follow", {json.dumps(asset)}]'
+        data = f"42['depth/follow', {json.dumps(asset)}]"
         self.send_request(data)
 
     def unfollow_candle(self, asset):
-        data = f'42["depth/unfollow", {json.dumps(asset)}]'
+        data = f"42['depth/unfollow', {json.dumps(asset)}]"
         self.send_request(data)
 
     def unsubscribe_realtime_candle(self, asset):
-        data = f'42["subfor", {json.dumps(asset)}]'
+        data = f"42['subfor', {json.dumps(asset)}]"
         self.send_request(data)
 
     def edit_training_balance(self, amount):
-        data = f'42["demo/refill", {json.dumps(amount)}]'
+        data = f"42['demo/refill', {json.dumps(amount)}]"
         self.send_request(data)
 
     def signals_subscribe(self):
-        self.send_request('42["signal/subscribe"]')
+        self.send_request("42['signal/subscribe']")
 
     async def get_profile(self):
-        profile_data = QxBrowserSettings(self).get().get("data")
-        self.profile.nick_name = profile_data["nickname"]
-        self.profile.profile_id = profile_data["id"]
-        self.profile.demo_balance = profile_data["demoBalance"]
-        self.profile.live_balance = profile_data["liveBalance"]
-        self.profile.avatar = profile_data["avatar"]
-        self.profile.currency_code = profile_data["currencyCode"]
-        self.profile.country = profile_data["country"]
-        self.profile.country_name = profile_data["countryName"]
-        self.profile.currency_symbol = profile_data["currencySymbol"]
+        profile_data = QxBrowserSettings(self).get().get('data')
+        self.profile.nick_name = profile_data['nickname']
+        self.profile.profile_id = profile_data['id']
+        self.profile.demo_balance = profile_data['demoBalance']
+        self.profile.live_balance = profile_data['liveBalance']
+        self.profile.avatar = profile_data['avatar']
+        self.profile.currency_code = profile_data['currencyCode']
+        self.profile.country = profile_data['country']
+        self.profile.country_name = profile_data['countryName']
+        self.profile.currency_symbol = profile_data['currencySymbol']
         return self.profile
 
     async def check_session(self):
-        session_file = os.path.join(self.settings.get("resource_path"), "session.json")
+        session_file = os.path.join(self.settings.get('resource_path'), 'session.json')
         if os.path.isfile(session_file):
             try:
                 with open(session_file) as file:
@@ -112,11 +112,11 @@ class QuotexWssApi:
 
     async def autenticate(self):
         await self.check_session()
-        if not self.session_data.get("token"):
-            print("Logging in ... ", end="")
+        if not self.session_data.get('token'):
+            print('Logging in ... ', end='')
             await self.login(self.settings)
-            if self.session_data.get("token"):
-                print("✅ OK")
+            if self.session_data.get('token'):
+                print('✅ OK')
 
     async def start_websocket(self, reconnect):
         if not reconnect:
@@ -126,15 +126,15 @@ class QuotexWssApi:
         global_value.websocket_error_reason = None
         self.websocket_client = WebsocketClient(self)
         payload = {
-            "ping_interval": 25,
-            "ping_timeout": 15,
-            "ping_payload": "2",
-            "origin": "https://qxbroker.com",
-            "host": "ws2.qxbroker.com",
-            "sslopt": {"cert_reqs": ssl.CERT_NONE, "ca_certs": certifi.where()}
+            'ping_interval': 25,
+            'ping_timeout': 15,
+            'ping_payload': '2',
+            'origin': 'https://qxbroker.com',
+            'host': 'ws2.qxbroker.com',
+            'sslopt': {'cert_reqs': ssl.CERT_NONE, 'ca_certs': certifi.where()}
         }
-        if platform.system() == "Linux":
-            payload["sslopt"]["ssl_version"] = ssl.PROTOCOL_TLSv1_2
+        if platform.system() == 'Linux':
+            payload['sslopt']['ssl_version'] = ssl.PROTOCOL_TLSv1_2
         self.websocket_thread = threading.Thread(target=self.websocket.run_forever, kwargs=payload)
         self.websocket_thread.daemon = True
         self.websocket_thread.start()
@@ -142,18 +142,18 @@ class QuotexWssApi:
             if global_value.check_websocket_if_error:
                 return False, global_value.websocket_error_reason
             if global_value.check_websocket_if_connect == 0:
-                logger.debug("Websocket connection closed.")
-                return False, "Websocket connection closed."
+                logger.debug('Websocket connection closed.')
+                return False, 'Websocket connection closed.'
             if global_value.check_websocket_if_connect == 1:
-                logger.debug("Websocket successfully connected.")
-                return True, "Websocket successfully connected."
+                logger.debug('Websocket successfully connected.')
+                return True, 'Websocket successfully connected.'
 
     import time
 
     def send_ssid(self):
         self.wss_message = None
         if not global_value.SSID:
-            session_file = os.path.join(self.settings.get("resource_path"), "session.json")
+            session_file = os.path.join(self.settings.get('resource_path'), 'session.json')
             if os.path.exists(session_file):
                 os.remove(session_file)
             return False
@@ -170,15 +170,15 @@ class QuotexWssApi:
         global_value.ssl_Mutual_exclusion = False
         global_value.ssl_Mutual_exclusion_write = False
         if global_value.check_websocket_if_connect:
-            logger.info("Closing websocket connection...")
+            logger.info('Closing websocket connection...')
             self.close()
         check_websocket, websocket_reason = await self.start_websocket(reconnect)
         if check_websocket and not global_value.SSID:
-            global_value.SSID = self.session_data.get("token")
+            global_value.SSID = self.session_data.get('token')
         return check_websocket, websocket_reason
 
     async def reconnect(self):
-        logger.info("Websocket Reconnection...")
+        logger.info('Websocket Reconnection...')
         await self.start_websocket(reconnect=True)
 
     def close(self):
