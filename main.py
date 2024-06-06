@@ -62,12 +62,13 @@ class QuotexService:
     for candle in candles['data']:
       print(f'T:{self.tz_util.utc_to_local(candle[0])}, $: {candle[1]}, ?: {candle[2]}')
 
-  async def get_candle_v2(self, asset = 'EURUSD_otc', interval = 60): #60 to 180 sec
+  async def get_candle_v2(self, asset = 'AUDNZD_otc', interval = 60): #60 to 180 sec
     if await self.get_asset_status(asset):
-      candles = await self.client.get_candle_v2(asset, interval)
-      for candle in candles:
-        await self.write_to_csv('./data/candles.csv', candle)
-      print(candles)
+      data = await self.client.get_candle_v2(asset, interval)
+      for tick in data['history']:
+        print(f'T:{self.tz_util.utc_to_local(tick[0])}, $: {tick[1]}, ?: {tick[2]}')
+      for candle in reversed(data['candles']):
+        print(candle)
 
   async def get_realtime_candle(self, asset='AUDNZD_otc', list_size=30):
     connected = await self.get_asset_status(asset)
@@ -77,6 +78,16 @@ class QuotexService:
         ticks = self.client.get_realtime_candles(asset)
         if len(ticks[asset]) == list_size:
           return ticks[asset]
+
+  async def get_last_tick(self, asset='AUDNZD_otc'):
+    connected = await self.get_asset_status(asset)
+    if connected:
+      self.client.start_candles_stream(asset)
+      while True:
+        ticks = self.client.get_realtime_candles(asset)
+        if len(ticks[asset]) == 10:
+          return ticks[asset]
+
 
   async def calculate_ohlc(self, data, interval):
     ticks_df = pd.DataFrame(data)
@@ -106,11 +117,14 @@ class QuotexService:
     open_assets = []
     if is_connected:
       for asset in self.client.get_all_asset_name():
-        payment, asset, is_open = self.client.check_asset_open(asset)
-        if is_open:
-          open_asset = [asset, f'{payment}%']
-          open_assets.append(open_asset)
-          print(f'{payment}% -',asset)
+        try:
+          asset_code, asset, is_open = self.client.check_asset_open(asset)
+          if is_open:
+            open_asset = [asset, f'{asset_code}', is_open]
+            open_assets.append(open_asset)
+            print(f'{asset_code} -', asset,'-',is_open)
+        except:
+          pass
     return open_assets
 
 
@@ -228,9 +242,9 @@ class QuotexCLI:
 
   async def set_tasks(self):
     return [
-      self.service.get_candle_v2('EURUSD_otc', 60),
-      self.service.get_realtime_candle('EURUSD_otc', 10),
-      self.service.get_realtime_sentiment('EURUSD_otc')
+      self.service.get_candle_v2('AUDNZD_otc', 60),
+      self.service.get_realtime_candle('AUDNZD_otc', 10),
+      self.service.get_realtime_sentiment('AUDNZD_otc')
     ]
 
   async def main_loop(self):

@@ -4,7 +4,12 @@ import json
 import time
 import asyncio
 import logging
+from pathlib import Path
+
 import websocket
+
+from settings.settings import Settings
+from utils.tz_util import TZUtil
 from .. import global_value
 
 logger = logging.getLogger(__name__)
@@ -14,11 +19,8 @@ class WebsocketClient(object):
     """Class for work with Quotex API websocket."""
 
     def __init__(self, api):
-        """
-        :param api: The instance of :class:`QuotexAPI
-            <quotexapi.api.QuotexAPI>`.
-        trace_ws: Enables and disable `enableTrace` in WebSocket Client.
-        """
+        settings = Settings(Path('./settings/config.yml'))
+        self.tz_util = TZUtil(settings.get('timezone'))
         self.api = api
         self.headers = {
             "User-Agent": self.api.session_data.get("user_agent"),
@@ -114,18 +116,21 @@ class WebsocketClient(object):
                 self.api.candles.candles_data = message["candles"]
                 self.api.candle_v2_data[message["asset"]] = message
                 self.api.candle_v2_data[message["asset"]]["candles"] = [{
-                        "time": candle[0],
-                        "open": candle[1],
-                        "close": candle[2],
-                        "high": candle[3],
-                        "low": candle[4]
+                        "dt": self.tz_util.utc_to_local(candle[0]),
+                        "t": candle[0],
+                        "o": candle[1],
+                        "c": candle[2],
+                        "h": candle[3],
+                        "l": candle[4]
                     } for candle in message["candles"]]
             elif len(message[0]) == 4:
-                result = {
-                    "time": message[0][1],
-                    "price": message[0][2]
+                tick = {
+                    "dt": self.tz_util.utc_to_local(message[0][1]),
+                    "t": message[0][1],
+                    "$": message[0][2]
                 }
-                self.api.realtime_price[message[0][0]].append(result)
+                #self.api.realtime_price[message[0][0]].append(tick)
+                self.api.last_tick[message[0][0]] = tick
             elif len(message[0]) == 2:
                 result = {
                     "sentiment": {

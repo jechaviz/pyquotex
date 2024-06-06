@@ -2,8 +2,6 @@ from quotexapi.ws.objects.base import Base
 
 
 class Profile(Base):
-    """Class for Quotex Profile websocket object."""
-
     def __init__(self):
         super(Profile, self).__init__()
         self.__name = "profile"
@@ -22,67 +20,42 @@ class Profile(Base):
 
     @property
     def nick_name(self):
-        """Property to get nick_name value.
-
-        :returns: The nick_name value.
-        """
         return self.__nick_name
 
     @nick_name.setter
     def nick_name(self, nick_name):
-        """Method to set nick_name value."""
         self.__nick_name = nick_name
 
     @property
     def live_balance(self):
-        """Property to get live_balance value.
-
-        :returns: The live_balance value.
-        """
         return self.__live_balance
 
     @live_balance.setter
     def live_balance(self, live_balance):
-        """Method to set live_balance value."""
         self.__live_balance = live_balance
 
     @property
     def profile_id(self):
-        """Property to get profile value.
-
-        :returns: The profile value.
-        """
         return self.__profile_id
 
     @profile_id.setter
     def profile_id(self, profile_id):
-        """Method to set profile value."""
         self.__profile_id = profile_id
 
     @property
     def demo_balance(self):
-        """Property to get demo_balance value.
-
-        :returns: The demo_balance value.
-        """
         return self.__demo_balance
 
     @demo_balance.setter
     def demo_balance(self, demo_balance):
-        """Method to set demo_balance value."""
         self.__demo_balance = demo_balance
 
     @property
     def avatar(self):
-        """Property to get avatar value.
-
-        :returns: The avatar value.
-        """
         return self.__avatar
 
     @avatar.setter
     def avatar(self, avatar):
-        """Method to set avatar value."""
         self.__avatar = avatar
 
     @property

@@ -38,7 +38,10 @@ class QuotexWssApi:
         self.proxies = settings.get("proxies")
         self.wss_host = settings.get("host")
         self.session_data = {}
+        self.signal_data = {}
+        self.candle_v2_data = {}
         self.realtime_price = {}
+        self.last_tick = {}
         self.profile = Profile()
         self.candles = Candles()
         self.timesync = TimeSync()
@@ -58,9 +61,8 @@ class QuotexWssApi:
         global_value.ssl_Mutual_exclusion_write = True
         try:
             self.websocket.send(data)
-        except WebSocketConnectionClosedException:
-            self.connect()
-            self.websocket.send(data)
+        except WebSocketConnectionClosedException as e:
+            logger.error(e)
         logger.debug(data)
         global_value.ssl_Mutual_exclusion_write = False
 
@@ -131,7 +133,11 @@ class QuotexWssApi:
             "ping_payload": "2",
             "origin": "https://qxbroker.com",
             "host": "ws2.qxbroker.com",
-            "sslopt": {"cert_reqs": ssl.CERT_NONE, "ca_certs": certifi.where()}
+            "sslopt": {
+                # "check_hostname": False,
+                "cert_reqs": ssl.CERT_NONE,
+                "ca_certs": certifi.where(),
+            }
         }
         if platform.system() == "Linux":
             payload["sslopt"]["ssl_version"] = ssl.PROTOCOL_TLSv1_2

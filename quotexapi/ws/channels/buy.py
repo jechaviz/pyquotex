@@ -4,11 +4,8 @@ from quotexapi.expiration import get_expiration_time_quotex
 
 
 class Buy(Base):
-    """Class for Quotex buy websocket channel."""
-
     name = "buy"
-
-    def __call__(self, price, asset, direction, duration, request_id):
+    async def __call__(self, price, asset, direction, duration, request_id):
         option_type = 100
         if "_otc" not in asset:
             option_type = 1

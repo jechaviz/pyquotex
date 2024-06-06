@@ -238,6 +238,12 @@ class QuotexStableApi(object):
                 return self.api.realtime_price
             time.sleep(0.1)
 
+    def get_last_tick(self, asset):
+        while True:
+            if self.api.last_tick.get(asset):
+                return self.api.last_tick
+            time.sleep(0.1)
+
     def get_realtime_sentiment(self, asset):
         while True:
             if self.api.realtime_sentiment.get(asset):
