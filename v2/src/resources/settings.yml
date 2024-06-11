@@ -30,8 +30,8 @@ qx:
   emails:
     no_reply: noreply@qxbroker.com
   account:
-    user: emma_fiver@appniverse.com
-    pass: fiver_emmA123.
+    user: your@email.com
+    pass: your_pass
   locators:
     user: Email
     pass: Password
@@ -41,8 +41,8 @@ qx:
     submit_pin: Sign in
 imap:
   server: mail.spacemail.com
-  email: admin@appniverse.com
-  pass: 1Ac43E47-CAD0-4D8d-aeC4-8b69F991e444
+  email: your@email.com
+  pass: your_pass
   port: 993
 browser:
   user_data_dir: browser/instance/quotex.default
