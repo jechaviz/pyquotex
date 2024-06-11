@@ -23,5 +23,5 @@ pip install git+https://github.com/cleitonleonel/pyquotex.git
 ### Import as lib
 
 ```python
-from quotexapi.stable_api import QuotexStableApi
+from quotexapi.qx_stable_api import QxStableApi
 ```

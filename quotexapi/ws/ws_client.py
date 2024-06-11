@@ -9,6 +9,7 @@ from pathlib import Path
 import websocket
 
 from settings.settings import Settings
+from utils.this_name import ThisName
 from utils.tz_util import TZUtil
 from .. import global_value
 
@@ -19,6 +20,7 @@ class WebsocketClient(object):
     """Class for work with Quotex API websocket."""
 
     def __init__(self, api):
+        ThisName.print(self)
         settings = Settings(Path('./settings/config.yml'))
         self.tz_util = TZUtil(settings.get('timezone'))
         self.api = api
@@ -39,6 +41,7 @@ class WebsocketClient(object):
         )
 
     def on_message(self, wss, message):
+        ThisName.print(self)
         """Method to process websocket messages."""
         global_value.ssl_Mutual_exclusion = True
         current_time = time.localtime()
@@ -144,12 +147,14 @@ class WebsocketClient(object):
         global_value.ssl_Mutual_exclusion = False
 
     def on_error(self, wss, error):
+        ThisName.print(self)
         """Method to process websocket errors."""
         logger.error(error)
         global_value.websocket_error_reason = str(error)
         global_value.check_websocket_if_error = True
 
     def on_open(self, wss):
+        ThisName.print(self)
         """Method to process websocket open."""
         logger.info("Websocket client connected.")
         global_value.check_websocket_if_connect = 1
@@ -163,12 +168,15 @@ class WebsocketClient(object):
         self.wss.send('42["tick"]')
 
     def on_close(self, wss, close_status_code, close_msg):
+        ThisName.print(self)
         """Method to process websocket close."""
         logger.info("Websocket connection closed.")
         global_value.check_websocket_if_connect = 0
 
     def on_ping(self, wss, ping_msg):
+        ThisName.print(self)
         pass
 
     def on_pong(self, wss, pong_msg):
+        ThisName.print(self)
         self.wss.send("2")

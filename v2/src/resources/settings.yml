@@ -1,0 +1,48 @@
+app:
+  timezone: America/Mexico_City
+  paths:
+    session: src/resources/session.json
+    resources: src/resources
+    cache: src/cache
+qx:
+  host: qxbroker.com
+  urls:
+    base: https://qxbroker.com/en/
+    login: sign-in
+    logged: trade
+    logout: logout
+  wss:
+    url: wss://ws2.qxbroker.com/socket.io/?EIO=3&transport=websocket
+    origin: https://qxbroker.com
+    host: ws2.qxbroker.com
+    enable_trace: false
+    ping:
+      interval: 25
+      timeout: 15
+      payload: 2
+    retry:
+      on: true 
+      max_attempts: 5 
+      wait: 5
+    msg_interval:
+      secs: 20
+  proxies: None
+  emails:
+    no_reply: noreply@qxbroker.com
+  account:
+    user: emma_fiver@appniverse.com
+    pass: fiver_emmA123.
+  locators:
+    user: Email
+    pass: Password
+    submit_login: Sign In
+    pin_sent: Please enter the PIN-code we've just sent to your email
+    pin: Enter 6-digit code...
+    submit_pin: Sign in
+imap:
+  server: mail.spacemail.com
+  email: admin@appniverse.com
+  pass: 1Ac43E47-CAD0-4D8d-aeC4-8b69F991e444
+  port: 993
+browser:
+  user_data_dir: browser/instance/quotex.default

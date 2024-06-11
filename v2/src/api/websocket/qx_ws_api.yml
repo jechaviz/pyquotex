@@ -1,0 +1,164 @@
+#qx_ws_api
+actions:
+  # required actions definitions for ws_default_client.py
+  on_ping:
+  on_pong:
+    - endpoint: 2
+  on_open:
+    - endpoint: 42["authorization", {payload}]
+      payload:
+        session: '{{session_id}}'
+        isDemo: '{{is_demo}}'
+        tournamentId: 0
+  on_interval:
+    - endpoint: 42["tick"]
+  on_init:
+    - endpoint: 42["tick"]
+    - endpoint: 42["indicator/list"]
+    - endpoint: 42["drawing/load"]
+    - endpoint: 42["pending/list"]
+    #- endpoint: 42["instruments/update",{payload}]
+    #  payload:
+    #    asset: {{asset}}
+    #    period: {{period}}
+    - endpoint: 42["chart_notification/get"]
+    #- endpoint: 42['depth/follow',{{asset}}]
+    - endpoint: 42["tick"]
+  # api actions definitions for qx
+  cancel_orders:
+    - endpoint: 42["orders/cancel", {payload}]
+      payload:
+        tickets: '{{tickets_ids}}'
+  subscribe_real_time_candles:
+    - endpoint: 42["instruments/update", {payload}]
+      payload:
+        asset: '{{asset}}'
+        period: '{{period}}'
+  unsubscribe_real_time_candles:
+    - endpoint: 42["subfor", "{{asset}}"]
+  edit_demo_balance:
+    - endpoint: 42["demo/refill", "{{amount}}"]
+  signals_suscribe:
+    - endpoint: 42["signal/subscribe"]
+  follow_candles:
+    - endpoint: 42["depth/follow", "{{asset}}"]
+  unfollow_candles:
+    - endpoint: 42["depth/unfollow", "{{asset}}"]
+  get_candles:
+    - endpoint: 42["history/load/line", {payload}]
+      payload:
+        id: '{{asset_id}}'
+        index: '{{index}}'
+        time: '{{period}}'
+        offset: '{{offset}}'
+  trade:
+    - endpoint: 42["depth/follow", "{{asset}}"]
+    - endpoint: 42["settings/store", {payload}]
+      payload:
+        chartId: graph
+        settings:
+          chartId: graph
+          chartType: 2
+          currentExpirationTime: '{{duration}}'
+          isFastOption: false
+          isFastAmountOption: false
+          isIndicatorsMinimized: false
+          isIndicatorsShowing: true
+          isShortBetElement: false
+          chartPeriod: 4
+          currentAsset:
+            symbol: '{{asset}}'
+          dealValue: 5
+          dealPercentValue: 1
+          isVisible: true
+          timePeriod: 30
+          gridOpacity: 8
+          isAutoScrolling:
+          isOneClickTrade: true
+          upColor: '#0FAF59'
+          downColor: '#FF6251'
+    - endpoint: 42["tick"]
+    - endpoint: 42["orders/open", {payload}]
+      payload:
+        asset: '{{asset}}'
+        amount: '{{price}}'
+        time: '{{duration}}'
+        action: '{{direction}}'
+        isDemo: '{{is_demo}}'
+        tournamentId: 0
+        requestId: '{{request_id}}'
+        optionType: '{{option_type}}'
+var_defaults: # if not provided on any action called, vars above will be filled with these values as required
+  is_demo: 1
+  period: 5
+  offset: 0
+  asset: usd
+  price: 5
+  duration: 1
+  direction: 2
+constants:
+  asset_codes:
+    AUDCAD: 36
+    AUDCAD_otc: 67
+    AUDCHF: 37
+    AUDCHF_otc: 68
+    AUDJPY: 38
+    AUDJPY_otc: 69
+    AUDUSD: 40
+    AUDUSD_otc: 71
+    AXJAUD: 315
+    AXP_otc: 291
+    BA_otc: 292
+    CADCHF: 41
+    CADJPY_otc: 73
+    CHIA50: 328
+    DJIUSD: 317
+    EURAUD: 44
+    EURCAD: 45
+    EURCHF: 46
+    EURCHF_otc: 77
+    EURGBP: 47
+    EURGBP_otc: 78
+    EURJPY: 48
+    EURJPY_otc: 79
+    EURSGD: 123
+    EURUSD: 1
+    EURUSD_otc: 66
+    F40EUR: 318
+    FB_otc: 187
+    FTSGBP: 319
+    GBPAUD: 51
+    GBPAUD_otc: 81
+    GBPCAD: 52
+    GBPCHF: 53
+    GBPJPY: 54
+    GBPJPY_otc: 84
+    GBPUSD: 56
+    GEREUR: 316
+    HSIHKD: 320
+    IBXEUR: 321
+    INTC_otc: 190
+    IT4EUR: 326
+    JNJ_otc: 296
+    JPXJPY: 327
+    MCD_otc: 175
+    MSFT_otc: 176
+    NDXUSD: 322
+    NZDJPY_otc: 89
+    NZDUSD: 60
+    NZDUSD_otc: 90
+    PFE_otc: 297
+    SPXUSD: 323
+    STXEUR: 325
+    UKBrent_otc: 164
+    USCrude_otc: 165
+    USDCAD: 61
+    USDCAD_otc: 91
+    USDCHF: 62
+    USDCHF_otc: 92
+    USDJPY: 63
+    USDJPY_otc: 93
+    XAGUSD: 65
+    XAGUSD_otc: 167
+    XAUUSD: 2
+    XAUUSD_otc: 169

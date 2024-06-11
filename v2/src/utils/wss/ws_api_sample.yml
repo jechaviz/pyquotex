@@ -1,0 +1,25 @@
+my_api:
+  # required actions definitions for ws_default_client.py
+  on_ping:
+  on_pong:
+    - endpoint: 2
+  on_open:
+    - endpoint: 42["my_auth"/endpoint, {payload}]
+      payload:
+        session: '{{session_id}}'
+        my_field: '{{my_field}}'
+      is_success:
+        response_contains: OK
+      is_rejected:
+        response_contains: Unauthorized
+      is_error:
+        response_contains: Bad Request
+  on_interval:
+    - endpoint: 42["run_each_20_secs/endpoint"]
+  on_init:
+    - endpoint: 42["1st/endpoint"]
+    - endpoint: 42["2nd/endpoint"]
+    #- endpoint: 42["3rd/endpoint",{payload}]
+    #  payload:
+    #    my_field: {{asset}}
+  # other actions from api

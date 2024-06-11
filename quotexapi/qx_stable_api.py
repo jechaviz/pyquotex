@@ -5,24 +5,27 @@ import logging
 from datetime import datetime
 from collections import defaultdict
 
+from utils.this_name import ThisName
 from . import expiration
 from . import global_value
-from .api import QuotexWssApi
+from .qx_ws_api import QxWsApi
 from .constants import codes_asset
 
 __version__ = "1.0.0"
 logger = logging.getLogger(__name__)
 
 def nested_dict(n, type):
+    ThisName.print()
     if n == 1:
         return defaultdict(type)
     else:
         return defaultdict(lambda: nested_dict(n - 1, type))
 
 def truncate(f, n):
+    ThisName.print()
     return math.floor(f * 10 ** n) / 10 ** n
 
-class QuotexStableApi(object):
+class QxStableApi(object):
     def __init__(self, settings):
         self.size = [1, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600,
                      7200, 14400, 28800, 43200, 86400, 604800, 2592000]
@@ -42,13 +45,16 @@ class QuotexStableApi(object):
 
     @property
     def websocket(self):
+        ThisName.print(self)
         return self.websocket_client.wss
 
     @staticmethod
     def is_connected():
+        ThisName.print()
         return False if global_value.check_websocket_if_connect in [None, 0] else True
 
     async def re_subscribe_stream(self):
+        ThisName.print(self)
         subscriptions = [
             (self.subscribe_candle, self.start_candles_one_stream, True),
             (self.subscribe_candle_all_size, self.start_candles_all_size_stream, False),
@@ -66,6 +72,7 @@ class QuotexStableApi(object):
                 pass
 
     async def get_instruments(self):
+        ThisName.print(self)
         await asyncio.sleep(self.suspend)
         self.api.instruments = None
         while self.api.instruments is None:
@@ -80,14 +87,17 @@ class QuotexStableApi(object):
         return self.api.instruments
 
     def get_all_instruments(self):
+        ThisName.print(self)
         if self.api.instruments:
             return self.api.instruments
 
     def get_all_asset_name(self):
+        ThisName.print(self)
         if self.api.instruments:
             return [instrument[2].replace("\n", "") for instrument in self.api.instruments]
 
     def check_asset_open(self, instrument):
+        ThisName.print(self)
         if self.api.instruments:
             for i in self.api.instruments:
                 if instrument == i[2]:
@@ -95,6 +105,7 @@ class QuotexStableApi(object):
                     return i[0], i[2], i[14]
 
     async def get_candles(self, asset, offset, period=None):
+        ThisName.print(self)
         index = expiration.get_timestamp()
         # index - offset
         if period:
@@ -117,6 +128,7 @@ class QuotexStableApi(object):
         return self.api.candles.candles_data
 
     async def get_candle_v2(self, asset, period):
+        ThisName.print(self)
         self.api.candle_v2_data[asset] = None
         self.stop_candles_stream(asset)
         self.api.subscribe_realtime_candle(asset, period)
@@ -125,8 +137,9 @@ class QuotexStableApi(object):
         return self.api.candle_v2_data[asset]
 
     async def connect(self):
+        ThisName.print(self)
         if self.is_connected(): return True, 'OK'
-        self.api = QuotexWssApi(self.settings)
+        self.api = QxWsApi(self.settings)
         self.api.trace_ws = self.debug_ws_enable
         is_connected, message = await self.api.connect(self.account_is_demo)
         if is_connected:
@@ -138,6 +151,7 @@ class QuotexStableApi(object):
         return is_connected, message
 
     def set_account_mode(self, balance_mode="PRACTICE"):
+        ThisName.print(self)
         acc_mode = {"REAL": 0, "PRACTICE": 1}
         try:
             self.account_is_demo = acc_mode[balance_mode.upper()]
@@ -146,9 +160,11 @@ class QuotexStableApi(object):
             exit(1)
 
     def change_account(self, balance_mode):
+        ThisName.print(self)
         self.account_is_demo = 0 if balance_mode.upper() == "REAL" else 1
 
     async def edit_practice_balance(self, amount=None):
+        ThisName.print(self)
         self.api.training_balance_edit_request = None
         self.api.edit_training_balance(amount)
         while self.api.training_balance_edit_request is None:
@@ -156,6 +172,7 @@ class QuotexStableApi(object):
         return self.api.training_balance_edit_request
 
     async def get_balance(self):
+        ThisName.print(self)
         while self.api.account_balance is None:
             await asyncio.sleep(0.1)
         balance = self.api.account_balance.get("demoBalance") \
@@ -163,9 +180,11 @@ class QuotexStableApi(object):
         return float(f"{truncate(balance + self.get_profit(), 2):.2f}")
 
     async def get_profile(self):
+        ThisName.print(self)
         return await self.api.get_profile()
 
     async def buy(self, amount, asset, direction, duration):
+        ThisName.print(self)
         request_id = expiration.get_timestamp()
         self.api.current_asset = asset
         self.api.subscribe_realtime_candle(asset, duration)
@@ -181,10 +200,12 @@ class QuotexStableApi(object):
         return status_buy, self.api.buy_successful
 
     async def _api_buy_id(self):
+        ThisName.print(self)
         while self.api.buy_id is None:
             await asyncio.sleep(0.1)
 
     async def sell_option(self, options_ids):
+        ThisName.print(self)
         self.api.sell_option(options_ids)
         self.api.sold_options_respond = None
         try:
@@ -194,13 +215,16 @@ class QuotexStableApi(object):
         return self.api.sold_options_respond
 
     async def _api_sold_options(self):
+        ThisName.print(self)
         while self.api.sold_options_respond is None:
             await asyncio.sleep(0.1)
 
     def get_payment(self):
+        ThisName.print(self)
         return {i[2]: {"turbo_payment": i[18], "payment": i[5], "open": i[14]} for i in self.api.instruments}
 
     async def start_remaining_time(self):
+        ThisName.print(self)
         now_stamp = datetime.fromtimestamp(expiration.get_timestamp())
         expiration_stamp = datetime.fromtimestamp(self.api.timesync.server_timestamp)
         remaining_time = int((expiration_stamp - now_stamp).total_seconds())
@@ -212,6 +236,7 @@ class QuotexStableApi(object):
             print("\nCountdown was cancelled.")
 
     async def check_win(self, id_number):
+        ThisName.print(self)
         await self.start_remaing_time()
         while True:
             try:
@@ -222,41 +247,50 @@ class QuotexStableApi(object):
         return listinfodata_dict["win"]
 
     def start_candles_stream(self, asset, period=0):
+        ThisName.print(self)
         self.api.follow_candle(asset)
         self.api.subscribe_realtime_candle(asset, period)
 
     def stop_candles_stream(self, asset):
+        ThisName.print(self)
         self.api.unfollow_candle(asset)
         self.api.unsubscribe_realtime_candle(asset)
 
     def start_signals_data(self):
+        ThisName.print(self)
         self.api.signals_subscribe()
 
     def get_realtime_candles(self, asset):
+        ThisName.print(self)
         while True:
             if self.api.realtime_price.get(asset):
                 return self.api.realtime_price
             time.sleep(0.1)
 
     def get_last_tick(self, asset):
+        ThisName.print(self)
         while True:
             if self.api.last_tick.get(asset):
                 return self.api.last_tick
             time.sleep(0.1)
 
     def get_realtime_sentiment(self, asset):
+        ThisName.print(self)
         while True:
             if self.api.realtime_sentiment.get(asset):
                 return self.api.realtime_sentiment
             time.sleep(0.1)
 
     def get_signal_data(self):
+        ThisName.print(self)
         return self.api.signal_data
 
     def get_profit(self):
+        ThisName.print(self)
         return self.api.profit_in_operation or 0
 
     async def start_candles_one_stream(self, asset, size):
+        ThisName.print(self)
         if not (str(asset + "," + str(size)) in self.subscribe_candle):
             self.subscribe_candle.append((asset + "," + str(size)))
         start = time.time()
@@ -278,6 +312,7 @@ class QuotexStableApi(object):
             await asyncio.sleep(0.1)
 
     async def start_candles_all_size_stream(self, asset):
+        ThisName.print(self)
         self.api.candle_generated_all_size_check[str(asset)] = {}
         if not (str(asset) in self.subscribe_candle_all_size):
             self.subscribe_candle_all_size.append(str(asset))
@@ -300,6 +335,7 @@ class QuotexStableApi(object):
             await asyncio.sleep(0.1)
 
     async def start_mood_stream(self, asset, instrument="turbo-option"):
+        ThisName.print(self)
         if asset not in self.subscribe_mood:
             self.subscribe_mood.append(asset)
         while True:
@@ -312,4 +348,5 @@ class QuotexStableApi(object):
                 await asyncio.sleep(0.1)
 
     def close(self):
+        ThisName.print(self)
         return self.api.close()

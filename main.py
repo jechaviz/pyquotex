@@ -8,12 +8,12 @@ from pathlib import Path
 
 from utils.tz_util import TZUtil
 from settings.settings import Settings
-from quotexapi.stable_api import QuotexStableApi
+from quotexapi.qx_stable_api import QxStableApi
 
-class QuotexService:
+class QxService:
   def __init__(self, settings):
     self.is_connected = None
-    self.client = QuotexStableApi(settings)
+    self.client = QxStableApi(settings)
     self.tz_util = TZUtil(settings.get('timezone'))
     self.asset = settings.get('asset')
 
@@ -264,6 +264,6 @@ if __name__ == '__main__':
     {'amount': 10, 'asset': 'AUDCAD_otc', 'direction': 'put', 'duration': 60},
   ]
   settings = Settings(Path('./settings/config.yml'))
-  service = QuotexService(settings)
+  service = QxService(settings)
   cli = QuotexCLI(service)
   asyncio.run(cli.main_loop())
