@@ -15,7 +15,7 @@ from asyncio.log import logger
 @singleton
 class QxBrowserLogin:
   def __init__(self, settings):
-    CodeSignature.print(self)
+    CodeSignature.info(self)
     self.settings = settings
     self.browser = WebBrowser(settings)
     self.session_data = {}
@@ -116,7 +116,7 @@ class QxBrowserLogin:
       raise Exception('Error getting session id')
 
   async def get_session_data(self, force_login=False):
-    CodeSignature.print(self)
+    CodeSignature.info(self)
     if not self.saved_session_data:
       self.load_saved_session()
     if self.saved_session_data and not force_login:
