@@ -15,7 +15,7 @@ from websocket import WebSocketBadStatusException, WebSocketApp, WebSocketConnec
 from src.api.session.qx_session_manager import QxSessionManager
 from src.api.websocket.qx_ws_msg_handler import QxWsMsgHandler
 from src.utils.settings import Settings
-from src.utils.this_name import ThisName
+from src.utils.code_signature import CodeSignature
 from src.utils.time.time_util import TimeUtil
 from src.utils.wss.ws_state import WsState
 from src.utils.wss.session_manager_i import SessionManagerI
@@ -37,7 +37,7 @@ class DefaultWebsocketClient:
   def __init__(self, settings, ws_api_section_name_in_settings_file: str,
                ws_state: WsState, session_manager: SessionManagerI,
                api_actions_config_file: str, ws_msg_handler: WsMsgHandlerI):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.api_parser = ApiParser(api_actions_config_file)
     self.session_manager = session_manager
     self.api_name = ws_api_section_name_in_settings_file
@@ -64,7 +64,7 @@ class DefaultWebsocketClient:
     websocket.enableTrace(self.config('enable_trace'))
 
   async def try_connection_handler(self, attempts=10):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if self.is_connected(): return True
     await self.connect()
     if self.is_connected(): return True
@@ -80,7 +80,7 @@ class DefaultWebsocketClient:
       await self.try_connection_handler(attempts - 1)
     return False
   async def get_session_data(self, reconnect):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if reconnect:
       self.session_data = await self.session_manager.login(force=True)
     if not self.session_data.get('session_id'):
@@ -88,7 +88,7 @@ class DefaultWebsocketClient:
     return self.session_data
 
   async def connect(self, reconnect=False):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if self.is_connected() and not reconnect: return True
     await self.get_session_data(reconnect)
     if not self.session_data.get('session_id'): return False
@@ -108,14 +108,14 @@ class DefaultWebsocketClient:
       await self._on_close_handler(e)
 
   async def reconnect(self):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if self.config('retry.on') and self.retry_count < self.config('retry.max_attempts'):
       await asyncio.sleep(self.config('retry.wait'))
       await self.connect(reconnect=True)
       self.retry_count += 1
 
   def send(self, action_id, params):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if self.ws:
       try:
         requests = self.api_parser.action_requests(action_id, params)
@@ -131,7 +131,7 @@ class DefaultWebsocketClient:
 
   # Not flexible enough. Would need refactor if used for other wss apis.
   def on_message(self, ws, msg):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if not self.ws_msg_handler.is_connected(msg): return
     self.set_connected(True)
     self.retry_count = 0
@@ -151,7 +151,7 @@ class DefaultWebsocketClient:
       self.ws_watch_state_changes_thread.join()
 
   async def _on_close_handler(self, e):
-    ThisName.print(self)
+    CodeSignature.print(self)
     # on_close coroutine
     logger.info(f'Websocket connection failed: {e}. Attempting to reconnect...')
     self.ws = None
@@ -178,14 +178,14 @@ class DefaultWebsocketClient:
     self.ws_thread.start()
 
   def is_ws_alive(self):
-    ThisName.print(self)
+    CodeSignature.print(self)
     return self.ws_thread.is_alive()
 
   def is_connected(self):
     return self.get_state('connected')
 
   def on_open(self, ws):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.set_connected(True)
     self.send('on_open', self.session_data)
     while not TimeUtil.wait(5, lambda: self.ws_msg, 0.1):
@@ -198,23 +198,23 @@ class DefaultWebsocketClient:
       self.disconnect()
 
   def on_ping(self, ws, ping_msg):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.send('ping', {})
 
   def on_pong(self, ws, pong_msg):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.send('pong', {})
 
   def on_reconnect(self, ws):
-    ThisName.print(self)
+    CodeSignature.print(self)
     pass
 
   def on_error(self, ws, error_msg):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.set_state('error_msg', str(error_msg))
 
   def on_close(self, ws, close_status_code, close_msg):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.set_connected(False)
     self.ws_msg = None
 

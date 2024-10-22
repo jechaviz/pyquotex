@@ -7,7 +7,7 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 
 from src.api.session.qx_mail_pin_getter import QxMailPinGetter
 from src.utils.settings import Settings
-from src.utils.this_name import ThisName
+from src.utils.code_signature import CodeSignature
 from src.utils.web.web_browser import WebBrowser
 from paprika import singleton
 from asyncio.log import logger
@@ -15,7 +15,7 @@ from asyncio.log import logger
 @singleton
 class QxBrowserLogin:
   def __init__(self, settings):
-    ThisName.print(self)
+    CodeSignature.print(self)
     self.settings = settings
     self.browser = WebBrowser(settings)
     self.session_data = {}
@@ -24,7 +24,7 @@ class QxBrowserLogin:
     self.html = None
 
   def load_saved_session(self):
-    ThisName.print(self)
+    CodeSignature.info(self)
     session_file = self.settings.get('app.paths.session')
     try:
       with open(session_file, 'r') as f:
@@ -116,7 +116,7 @@ class QxBrowserLogin:
       raise Exception('Error getting session id')
 
   async def get_session_data(self, force_login=False):
-    ThisName.print(self)
+    CodeSignature.print(self)
     if not self.saved_session_data:
       self.load_saved_session()
     if self.saved_session_data and not force_login:

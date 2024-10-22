@@ -1,6 +1,6 @@
 import inspect
 
-class ThisName:
+class CodeSignature:
 
     @staticmethod
     def get_indent():
@@ -26,9 +26,9 @@ class ThisName:
       except (IndexError, AttributeError):
         return ''
     @staticmethod
-    def print(obj=None, show_path=False):
-        indent = ThisName.get_indent()
-        obj_path = ThisName.get_path()
+    def info(obj=None, show_path=False):
+        indent = CodeSignature.get_indent()
+        obj_path = CodeSignature.get_path()
         fn = f"{obj.__class__.__name__+'.' if obj else ''}{inspect.stack()[1].function}"
         if show_path:
           print(f'{obj_path}-{fn}')
@@ -38,14 +38,15 @@ class ThisName:
 # Example usage
 class A:
   def a_method(self):
-    ThisName.print(self)
-    ThisName.print(self, show_path=True)
+    CodeSignature.info(self)
+    CodeSignature.info(self, show_path=True)
     B().b_method()
 
 class B:
   def b_method(self):
-    ThisName.print(self)
-    ThisName.print(self, show_path=True)
+    CodeSignature.info(self)
+    CodeSignature.info(self, show_path=True)
 
+# Integration test
 if __name__ == "__main__":
   A().a_method()
