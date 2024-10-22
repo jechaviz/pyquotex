@@ -1,9 +1,3 @@
-app:
-  timezone: America/Mexico_City
-  paths:
-    session: src/resources/session.json
-    resources: src/resources
-    cache: src/cache
 qx:
   host: qxbroker.com
   urls:

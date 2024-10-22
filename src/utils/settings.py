@@ -11,14 +11,26 @@ class Settings:
   def __init__(self, config_path: Path = None):
     self.data: dict = {}
     self.root_dir = Path(__file__).parent.parent.parent
-    self.config_path = config_path or Path(os.path.join(self.root_dir, 'src/resources/settings.yml'))
+    self.settings_path = config_path or Path(os.path.join(self.root_dir, 'src/resources/'))
     self._load_data()
 
+  def _merge_dicts(self, dict1: dict, dict2: dict) -> dict:
+    """Merge two dictionaries recursively."""
+    for key, value in dict2.items():
+      if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
+        dict1[key] = self._merge_dicts(dict1[key], value)
+      else:
+        dict1[key] = value
+    return dict1
+
   def _load_data(self):
-    self.data = YmlUtil.load(self.config_path)
+    env_files = self.settings_path.glob('env_*.yml')
+    for env_file in env_files:
+      file_data = YmlUtil.load(env_file)
+      self.data = self._merge_dicts(self.data, file_data)
 
   def _save_data(self):
-    YmlUtil.save(self.data, self.config_path)
+    YmlUtil.save(self.data, Path(os.path.join(self.root_dir, 'src/resources/env_new.yml')))
 
   def set(self, key: str, value: Any):
     # Sets a setting like key.subkey...value
@@ -56,6 +68,9 @@ def main():
   settings = Settings()
   print(settings.get('qx.urls.login'))
   print(settings.get('qx.wss.url'))
+  print(settings.get('qx.account.user'))
+  print(settings.get('qx.account.pass'))
+  print(settings.get('app.timezone'))
 
 
 # Integration test
