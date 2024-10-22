@@ -1,5 +1,6 @@
 import time
 
+
 class TimeUtil:
   @staticmethod
   def wait(timeout_secs, condition_func, interval=0.1):
@@ -9,6 +10,7 @@ class TimeUtil:
         return True
       time.sleep(interval)
     return False
+
 
 # Integration test
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
-import imaplib
 import email
+import imaplib
+
 
 class ImapClient:
   def __init__(self, settings):
@@ -34,8 +35,8 @@ class ImapClient:
       else:
         return None, None
     except Exception as e:
-        print(f'Error retrieving email from {sender_email}: {e}')
-        return None, None
+      print(f'Error retrieving email from {sender_email}: {e}')
+      return None, None
 
   def get_email_text_parts(self, raw_email):
     msg = email.message_from_bytes(raw_email)

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class SessionManagerI(ABC):
   def __init__(self, settings):
     self.settings = settings
