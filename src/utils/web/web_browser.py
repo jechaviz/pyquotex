@@ -6,30 +6,29 @@ class WebBrowser:
   def __init__(self, settings):
     self.user_data_dir = settings.get('app.paths.cache')
     self.args = [
-      '--disable-web-security',
-      '--no-sandbox',
-      '--disable-web-security',
       '--aggressive-cache-discard',
-      '--disable-cache',
       '--disable-application-cache',
-      '--disable-offline-load-stale-cache',
-      '--disk-cache-size=0',
       '--disable-background-networking',
+      '--disable-cache',
       '--disable-default-apps',
       '--disable-extensions',
+      '--disable-features=LeakyPeeker',
+      '--disable-gpu'
+      '--disable-offline-load-stale-cache',
+      '--disable-setuid-sandbox',
       '--disable-sync',
       '--disable-translate',
+      '--disable-web-security',
+      '--disk-cache-size=0',
       '--hide-scrollbars',
+      '--ignore-certificate-errors',
+      '--ignore-certificate-errors-spki-list',
+      '--ignore-ssl-errors',
       '--metrics-recording-only',
       '--mute-audio',
       '--no-first-run',
+      '--no-sandbox',
       '--safebrowsing-disable-auto-update',
-      '--ignore-certificate-errors',
-      '--ignore-ssl-errors',
-      '--ignore-certificate-errors-spki-list',
-      '--disable-features=LeakyPeeker',
-      '--disable-setuid-sandbox',
-      '--disable-gpu'
     ]
     self.browser = None
     self.context = None
@@ -41,6 +40,7 @@ class WebBrowser:
       self.browser = playwright.firefox
       self.context = await self.browser.launch_persistent_context(
         self.user_data_dir,
+        headless=True,
         extra_http_headers={
           'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0'}
       )
