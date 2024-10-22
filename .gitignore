@@ -117,7 +117,7 @@ target/
 
 # session & cache
 session.json
-settings/secrets.yml
+src/resources/secrets.yml
 bookmarkbackups
 cache2
 datareporting
