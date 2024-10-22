@@ -51,5 +51,3 @@ class WebBrowser:
 
     async def close_context(self):
         await self.context.close() if self.user_data_dir else await self.browser.close()
-
-

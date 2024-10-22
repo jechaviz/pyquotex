@@ -10,6 +10,7 @@ class TimeUtil:
       time.sleep(interval)
     return False
 
+# Integration test
 if __name__ == "__main__":
   while not TimeUtil.wait(5, lambda: None):  # Replace self.ws_msg with your condition
     print("Waiting for message (timeout in 5 seconds)...")

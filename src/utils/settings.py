@@ -56,5 +56,6 @@ def main():
   print(settings.get('qx.urls.login'))
   print(settings.get('qx.wss.url'))
 
+# Integration test
 if __name__ == '__main__':
   main()

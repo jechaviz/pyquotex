@@ -255,5 +255,6 @@ async def main():
   # ws.watch_state_changes()
   # await ws.disconnect()
 
+# Integration test
 if __name__ == '__main__':
   asyncio.run(main())

@@ -33,5 +33,6 @@ def main():
   print(DictUtil.nested_get(data, ['a', 'b', 'c']))
   print(DictUtil.nested_get(data, ['a']))
 
+# Integration test
 if __name__ == '__main__':
     main()

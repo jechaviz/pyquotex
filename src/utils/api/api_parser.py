@@ -113,5 +113,6 @@ def main():
   # class_code = api.generate_class()
   # print(class_code)
 
+# Integration test
 if __name__ == '__main__':
   main()
