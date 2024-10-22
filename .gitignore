@@ -117,7 +117,6 @@ target/
 
 # session & cache
 session.json
-settings/config.yml
 bookmarkbackups
 cache2
 datareporting
@@ -128,3 +127,4 @@ startupCache
 storage
 thumbnails
 
+/src/cache/

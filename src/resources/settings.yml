@@ -29,9 +29,6 @@ qx:
   proxies: None
   emails:
     no_reply: noreply@qxbroker.com
-  account:
-    user: your@email.com
-    pass: your_pass
   locators:
     user: Email
     pass: Password
@@ -39,10 +36,5 @@ qx:
     pin_sent: Please enter the PIN-code we've just sent to your email
     pin: Enter 6-digit code...
     submit_pin: Sign in
-imap:
-  server: mail.spacemail.com
-  email: your@email.com
-  pass: your_pass
-  port: 993
 browser:
   user_data_dir: browser/instance/quotex.default
