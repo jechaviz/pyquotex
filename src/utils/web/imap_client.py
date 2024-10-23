@@ -8,6 +8,7 @@ class ImapClient:
     self.email = settings.get('imap.email')
     self.password = settings.get('imap.pass')
     self.port = settings.get('imap.port')
+    # print(f'Connecting to {self.server}:{self.port}, user: {self.email}, password: {self.password}')
     self.connection = None
 
   def connect(self):

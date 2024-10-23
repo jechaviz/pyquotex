@@ -24,7 +24,10 @@ class QxMailPinGetter:
           return pin
       return None
     except Exception as e:
-      print(f'Error occurred: {e}')
+      if 'authentication failed' in str(e):
+        print('IMAP authentication failed. Check email and password, or IMAP Access status enabled.')
+      else:
+        print(f'Error occurred: {e}')
       return None
     finally:
       self.imap_client.disconnect()
