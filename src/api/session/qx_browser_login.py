@@ -1,6 +1,9 @@
 import asyncio
+import os
 import re
 import json
+import time
+
 import requests
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
@@ -33,6 +36,7 @@ class QxBrowserLogin:
         self.saved_session_data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
       logger.warning(f'Error loading session data: {e}')
+    print(self.saved_session_data)
     return self.saved_session_data
 
   def config(self, key):
@@ -121,6 +125,11 @@ class QxBrowserLogin:
     with session_file.open('w') as f:
       json.dump(self.session_data, f, indent=2)
 
+  async def delete_session_file(self):
+    CodeSignature.info(self)
+    session_file = self.settings.get('app.paths.session')
+    os.remove(session_file)
+
   async def get_dom(self, reload=False):
     CodeSignature.info(self)
     self.html = await self.browser.page.content()
@@ -132,6 +141,7 @@ class QxBrowserLogin:
     if self.session_data.get('session_id'):
       await self.set_cookies()
       await self.set_user_agent()
+      self.session_data['timestamp'] = time.time()
     else:
       raise Exception('Error getting session id')
 
@@ -140,7 +150,10 @@ class QxBrowserLogin:
     if not self.saved_session_data:
       self.load_saved_session()
     if self.saved_session_data and not force_login:
-      return self.saved_session_data
+      if time.time() - self.saved_session_data['timestamp'] < self.settings.get('qx.session.timeout'):
+        return self.saved_session_data
+      else:
+        await self.delete_session_file()
     async with async_playwright() as playwright:
       try:
         await self.browser.setup(playwright)

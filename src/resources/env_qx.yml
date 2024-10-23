@@ -30,5 +30,7 @@ qx:
     pin_sent: Please enter the PIN-code we've just sent to your email
     pin: Enter 6-digit code...
     submit_pin: Sign in
+  session:
+    timeout_secs: 3600
 browser:
   user_data_dir: browser/instance/quotex.default

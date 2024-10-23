@@ -37,6 +37,7 @@ class WebBrowser:
   async def setup(self, playwright: Playwright):
     # install(playwright.firefox, with_deps=True)
     if self.user_data_dir:
+      # print('Launching browser with user data...')
       self.browser = playwright.firefox
       self.context = await self.browser.launch_persistent_context(
         self.user_data_dir,
@@ -46,6 +47,7 @@ class WebBrowser:
       )
       self.page = self.context.pages[0]
     else:
+      # print('Launching browser...')
       self.browser = await playwright.firefox.launch(headless=True)
       self.context = await self.browser.new_context()
       self.page = await self.context.new_page()
