@@ -24,8 +24,8 @@ qx:
   emails:
     no_reply: noreply@qxbroker.com
   locators:
-    user: Email
-    pass: Password
+    user: email
+    pass: password
     submit_login: Sign In
     pin_sent: Please enter the PIN-code we've just sent to your email
     pin: Enter 6-digit code...
