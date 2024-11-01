@@ -1,5 +1,8 @@
 import re
 from bs4 import BeautifulSoup
+from snoop import snoop
+
+from src.utils.tree_log import tree
 from src.utils.web.imap_client import ImapClient
 from src.utils.settings import Settings
 from paprika import singleton
@@ -11,6 +14,7 @@ class QxMailPinGetter:
     self.settings = settings
 
   def get_pin(self):
+    tree.info(self)
     try:
       self.imap_client.connect()
       self.imap_client.select_mailbox()
@@ -43,6 +47,7 @@ class QxMailPinGetter:
     return None
 
   def extract_pin(self, html):
+    tree.info(self)
     if self._is_pin_email(html):
       dom = BeautifulSoup(html, 'html.parser')
       return dom.find('b').get_text()

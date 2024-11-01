@@ -24,12 +24,12 @@ qx:
   emails:
     no_reply: noreply@qxbroker.com
   locators:
-    user: email
-    pass: password
+    user_field: '#tab-1 input[name=email]'
+    pass_field: '#tab-1 input[name=password]'
     submit_login: Sign In
     pin_sent: Please enter the PIN-code we've just sent to your email
-    pin: Enter 6-digit code...
-    submit_pin: Sign in
+    pin_field: input[name=code]
+    submit_pin: button[type=submit]
   session:
     timeout_secs: 3600
 browser:

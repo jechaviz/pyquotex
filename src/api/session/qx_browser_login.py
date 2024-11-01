@@ -3,6 +3,7 @@ import os
 import re
 import json
 import time
+import pyperclip
 
 import requests
 from bs4 import BeautifulSoup
@@ -36,7 +37,7 @@ class QxBrowserLogin:
         self.saved_session_data = json.load(f)
         tree.info(self, self.saved_session_data)
     else:
-      tree.info(self, ' No saved session file found, creating it...')
+      tree.info(self, 'No saved session file found, getting it from qxbroker.com ...')
     return self.saved_session_data
 
   def config(self, key):
@@ -61,8 +62,8 @@ class QxBrowserLogin:
 
   async def _fill_sign_in_form(self):
     tree.info(self)
-    await self._fill_field_by_name(self.config('locators.user'), self.config('account.user'))
-    await self._fill_field_by_name(self.config('locators.pass'), self.config('account.pass'))
+    await self._fill_field_by_css(self.config('locators.user_field'), self.config('account.user'))
+    await self._fill_field_by_css(self.config('locators.pass_field'), self.config('account.pass'))
 
   async def _submit_sign_in_form(self):
     tree.info(self)
@@ -89,16 +90,18 @@ class QxBrowserLogin:
     await self.browser.page.get_by_placeholder(placeholder).press('Enter')
 
   async def handle_pin_required(self):
-    soup = BeautifulSoup(await self.browser.page.content(), 'html.parser')
+    tree.info(self)
+    await self.get_dom()
+    pyperclip.copy(self.html)
     pin_sent = self.config('locators.pin_sent')
-    if pin_sent in soup.get_text():
+    if pin_sent in self.html:
       pin_code = QxMailPinGetter(self.settings).get_pin()
       code = pin_code if pin_code else input(pin_sent)
       await self._enter_pin_code(code)
 
   async def _enter_pin_code(self, code):
-    await self._fill_field_by_placeholder(self.config('locators.pin'), code)
-    await self.browser.page.get_by_role('button', name=self.config('locators.submit_pin')).click()
+    await self._fill_field_by_css(self.config('locators.pin_field'), code)
+    await self.browser.page.locator(self.config('locators.submit_pin')).click()
 
   def set_session_id(self):
     tree.info(self)
@@ -134,6 +137,7 @@ class QxBrowserLogin:
   async def get_dom(self, reload=False):
     tree.info(self)
     self.html = await self.browser.page.content()
+    # await self.browser.page.wait_for_timeout(1000)
     self.dom = BeautifulSoup(self.html, 'html.parser')
 
   async def set_session_data(self):

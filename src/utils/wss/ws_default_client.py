@@ -82,9 +82,9 @@ class DefaultWebsocketClient:
   async def get_session_data(self, reconnect):
     tree.info(self)
     if reconnect:
-      self.session_data = await self.session_manager.login(force=True)
+      self.session_data = await self.session_manager.set_session(force=True)
     if not self.session_data.get('session_id'):
-      self.session_data = await self.session_manager.login()
+      self.session_data = await self.session_manager.set_session()
     return self.session_data
 
   async def connect(self, reconnect=False):
@@ -171,8 +171,7 @@ class DefaultWebsocketClient:
         'ca_certs': certifi.where(),
       }
     }
-    if platform.system() == 'Linux':
-      settings['sslopt']['ssl_version+'] = ssl.PROTOCOL_TLSv1_2
+    settings['sslopt']['ssl_version'] = ssl.PROTOCOL_TLSv1_2
     self.ws_thread = Thread(target=self.ws.run_forever, kwargs=settings)
     self.ws_thread.daemon = True
     self.ws_thread.start()

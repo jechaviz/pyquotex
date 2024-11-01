@@ -7,7 +7,7 @@ class SessionManagerI(ABC):
     self.session_data = {}
 
   @abstractmethod
-  async def login(self, force=False) -> dict:
+  async def set_session(self, force=False) -> dict:
     # Performs login and returns the session data.
     # Optionally, you can force login even if a session data exists.
     # Returns: A dictionary containing session data.

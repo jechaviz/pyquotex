@@ -13,7 +13,7 @@ class QxSessionManager(SessionManagerI):
   def __init__(self, settings):
     super().__init__(settings)
 
-  async def login(self, force=False) -> dict:
+  async def set_session(self, force=False) -> dict:
     tree.info(self)
     self.session_data = await QxBrowserLogin(self.settings).get_session_data(force)
     return self.session_data
@@ -33,7 +33,7 @@ class QxSessionManager(SessionManagerI):
 
 async def main():
   qx_sm = QxSessionManager(Settings())
-  session_data = await qx_sm.login()
+  session_data = await qx_sm.set_session()
   print(f'Logged: {session_data}' if session_data.get('session_id') else 'Not logged in')
   # is_logged_out = qx_sm.logout()
   # print(f'Logged out: {qx_sm.session_data}' if is_logged_out else 'Not logged out')
