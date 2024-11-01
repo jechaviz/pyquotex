@@ -11,7 +11,7 @@ from snoop import snoop
 
 from src.api.session.qx_mail_pin_getter import QxMailPinGetter
 from src.utils.settings import Settings
-from src.utils.code_signature import CodeSignature
+from src.utils.tree_log import tree
 from src.utils.web.web_browser import WebBrowser
 from paprika import singleton
 from asyncio.log import logger
@@ -20,7 +20,7 @@ from asyncio.log import logger
 @singleton
 class QxBrowserLogin:
   def __init__(self, settings):
-    CodeSignature.info(self)
+    tree.info(self)
     self.settings = settings
     self.browser = WebBrowser(settings)
     self.session_data = {}
@@ -29,14 +29,14 @@ class QxBrowserLogin:
     self.html = None
 
   def load_saved_session(self):
-    CodeSignature.info(self)
+    tree.info(self)
     session_file = self.settings.get('app.paths.session')
-    try:
+    if os.path.exists(session_file):
       with open(session_file, 'r') as f:
         self.saved_session_data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-      logger.warning(f'Error loading session data: {e}')
-    print(self.saved_session_data)
+        tree.info(self, self.saved_session_data)
+    else:
+      tree.info(self, ' No saved session file found, creating it...')
     return self.saved_session_data
 
   def config(self, key):
@@ -44,40 +44,40 @@ class QxBrowserLogin:
     return value
 
   async def go_to_sign_in_page(self):
-    CodeSignature.info(self)
+    tree.info(self)
     await self.browser.page.goto(self.config('urls.login'))
     await self.get_dom()
 
   def got_logged_in(self):
-    CodeSignature.info(self)
+    tree.info(self)
     return self.browser.page.url == self.config('urls.logged')
 
   async def sign_in(self):
-    CodeSignature.info(self)
+    tree.info(self)
     await self._fill_sign_in_form()
     await self._submit_sign_in_form()
     await self.browser.page.wait_for_timeout(10000)
     await self.get_dom()
 
   async def _fill_sign_in_form(self):
-    CodeSignature.info(self)
+    tree.info(self)
     await self._fill_field_by_name(self.config('locators.user'), self.config('account.user'))
     await self._fill_field_by_name(self.config('locators.pass'), self.config('account.pass'))
 
   async def _submit_sign_in_form(self):
-    CodeSignature.info(self)
+    tree.info(self)
     await self.browser.page.get_by_role('button', name=self.config('locators.submit_login')).click()
     async with self.browser.page.expect_navigation():
       await self.browser.page.wait_for_timeout(5000)
       await self.handle_pin_required()
 
   async def _fill_field_by_role(self, role, name, value):
-    CodeSignature.info(self)
+    tree.info(self)
     await self.browser.page.get_by_role(role, name=name).fill(value)
     await self.browser.page.get_by_role(role, name=name).press('Enter')
 
   async def _fill_field_by_css(self, css, value, index=0):
-    CodeSignature.info(self)
+    tree.info(self)
     await self.browser.page.locator(css).nth(index).fill(value)
     await self.browser.page.locator(css).nth(index).press('Enter')
 
@@ -101,7 +101,7 @@ class QxBrowserLogin:
     await self.browser.page.get_by_role('button', name=self.config('locators.submit_pin')).click()
 
   def set_session_id(self):
-    CodeSignature.info(self)
+    tree.info(self)
     try:
       token_match = re.search(r'\"token"\s*:\s*"(.+?)"', self.html)
       self.session_data['session_id'] = token_match.group(1)
@@ -119,24 +119,25 @@ class QxBrowserLogin:
     self.session_data['user_agent'] = await self.browser.page.evaluate('() => navigator.userAgent;')
 
   async def save_session_file(self):
-    CodeSignature.info(self)
+    tree.info(self)
     session_file = self.settings.get('app.paths.session')
     session_file.parent.mkdir(exist_ok=True, parents=True)
     with session_file.open('w') as f:
       json.dump(self.session_data, f, indent=2)
 
   async def delete_session_file(self):
-    CodeSignature.info(self)
+    tree.info(self)
     session_file = self.settings.get('app.paths.session')
-    os.remove(session_file)
+    if os.path.exists(session_file):
+      os.remove(session_file)
 
   async def get_dom(self, reload=False):
-    CodeSignature.info(self)
+    tree.info(self)
     self.html = await self.browser.page.content()
     self.dom = BeautifulSoup(self.html, 'html.parser')
 
   async def set_session_data(self):
-    CodeSignature.info(self)
+    tree.info(self)
     self.set_session_id()
     if self.session_data.get('session_id'):
       await self.set_cookies()
@@ -146,11 +147,11 @@ class QxBrowserLogin:
       raise Exception('Error getting session id')
 
   async def get_session_data(self, force_login=False):
-    CodeSignature.info(self)
+    tree.info(self)
     if not self.saved_session_data:
       self.load_saved_session()
     if self.saved_session_data and not force_login:
-      if time.time() - self.saved_session_data['timestamp'] < self.settings.get('qx.session.timeout'):
+      if time.time() - self.saved_session_data['timestamp'] < self.settings.get('qx.session.timeout_secs'):
         return self.saved_session_data
       else:
         await self.delete_session_file()

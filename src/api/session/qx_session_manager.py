@@ -4,7 +4,7 @@ from asyncio.log import logger
 
 from src.api.session.qx_browser_login import QxBrowserLogin
 from src.utils.settings import Settings
-from src.utils.code_signature import CodeSignature
+from src.utils.tree_log import tree
 from src.utils.web.http_client import HttpClient
 from src.utils.wss.session_manager_i import SessionManagerI
 
@@ -14,7 +14,7 @@ class QxSessionManager(SessionManagerI):
     super().__init__(settings)
 
   async def login(self, force=False) -> dict:
-    CodeSignature.info(self)
+    tree.info(self)
     self.session_data = await QxBrowserLogin(self.settings).get_session_data(force)
     return self.session_data
 
