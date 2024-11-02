@@ -1,5 +1,6 @@
 import inspect
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -32,12 +33,19 @@ class tree:
   def _log(level, obj=None, msg='', show_path=False):
     indent = tree.get_indent()
     obj_path = tree.get_path()
-    # Get the caller's function name and line number
+    # Get the caller's function name, line number, and file path
     caller_frame = inspect.stack()[2]
-    fn = f"{obj.__class__.__name__ + '.' if obj else ''}{caller_frame.function}"  # [2] to get caller function
+    fn = f"{obj.__class__.__name__ + '.' if obj else ''}{caller_frame.function}"
     line_number = caller_frame.lineno
-    signature = f'[{line_number}]{obj_path}-{fn}' if show_path else f'[{line_number}]{indent}{fn}'
-    message = f'{indent}> {msg}' if msg else f'{signature}'
+    file_path = os.path.abspath(caller_frame.filename)  # Full path for clickable link
+
+    # Format signature to include file path and line number
+    signature = f'{obj_path}-{fn}' if show_path else f'{indent}{fn}'
+    # file_link = f'{file_path}:{line_number}'  # Clickable file path with line number
+
+    # Final message includes the file link
+    message = f'{indent}> {msg}' if msg else f'{signature}' # ({file_link})
+    message = f'{message}:{line_number}'
     logger.log(level, message)
 
   @staticmethod
