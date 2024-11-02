@@ -56,7 +56,9 @@ class QxMailPinGetter:
     tree.info(self)
     if self._is_pin_email(html):
       dom = BeautifulSoup(html, 'html.parser')
-      return dom.find('b').get_text()
+      pin = dom.find('b').get_text()
+      tree.info('PIN: ', pin)
+      return pin
     return None
 
 def main():

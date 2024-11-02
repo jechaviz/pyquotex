@@ -29,7 +29,7 @@ qx:
     submit_login: Sign In
     pin_sent: Please enter the PIN-code we've just sent to your email
     pin_field: input[name=code]
-    submit_pin: button[type=submit]
+    submit_pin: Sign in
   session:
     timeout_secs: 3600
 browser:

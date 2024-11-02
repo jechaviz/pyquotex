@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 from src.utils.settings import Settings
+from src.utils.tree_log import tree
 from src.utils.web.email_obj import EmailObj
 
 
@@ -77,19 +78,21 @@ class ImapClient:
       print(f'Error applying slice: {e}')
       return email_ids
 
-  def get_emails(self, filters, slice_=slice(None)):
+  def get_emails(self, filters, limit=None, slice_=slice(None)):
     self.connect()
     self.select_mailbox()
 
     search_criteria = self._imap_search_criteria(filters) or 'ALL'
     status, email_ids = self.connection.search(None, search_criteria)
     if status != 'OK' or not email_ids[0]:
-      print('No emails found.')
+      tree.info('No emails found.')
       return []
 
     email_id_list = email_ids[0].split()[::-1]
+    email_id_list.reverse()
     sliced_email_ids = self._slice_emails(email_id_list, slice_)
-
+    if limit is not None:
+      sliced_email_ids = email_id_list[:limit]
     emails = []
     for email_id in sliced_email_ids:
       status, msg_data = self.connection.fetch(email_id, '(RFC822)')

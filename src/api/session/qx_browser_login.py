@@ -99,9 +99,10 @@ class QxBrowserLogin:
       code = pin_code if pin_code else input(pin_sent)
       await self._enter_pin_code(code)
 
-  async def _enter_pin_code(self, code):
-    await self._fill_field_by_css(self.config('locators.pin_field'), code)
-    await self.browser.page.locator(self.config('locators.submit_pin')).click()
+  async def _enter_pin_code(self, pin):
+    tree.info(self)
+    await self._fill_field_by_css(self.config('locators.pin_field'), pin)
+    await self.browser.page.get_by_role('button', name=self.config('locators.submit_pin')).click()
 
   def set_session_id(self):
     tree.info(self)
@@ -148,7 +149,8 @@ class QxBrowserLogin:
       await self.set_user_agent()
       self.session_data['timestamp'] = time.time()
     else:
-      raise Exception('Error getting session id')
+      tree.error(self, 'Session ID not found')
+      raise Exception()
 
   async def get_session_data(self, force_login=False):
     tree.info(self)
@@ -173,9 +175,9 @@ class QxBrowserLogin:
         await self.save_session_file()
         await self.browser.close_context()
       except PlaywrightTimeoutError as e:
-        print(f'Probably bad internet connection: {e}')
+        tree.error(self,f'Probably bad internet connection: {e}')
       except Exception as e:
-        print(f'Error in QxLogin: {e}')
+        tree.error(self, f'Error in QxLogin: {e}')
     return self.session_data
 
 
