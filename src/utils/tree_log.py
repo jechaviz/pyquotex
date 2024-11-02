@@ -4,7 +4,6 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 class tree:
-
   @staticmethod
   def get_indent():
     return '  ' * (len(inspect.stack()) - 14)  # Consider only relevant frames
@@ -33,8 +32,11 @@ class tree:
   def _log(level, obj=None, msg='', show_path=False):
     indent = tree.get_indent()
     obj_path = tree.get_path()
-    fn = f"{obj.__class__.__name__ + '.' if obj else ''}{inspect.stack()[2].function}"  # [2] to get caller function
-    signature = f'{obj_path}-{fn}' if show_path else f'{indent}{fn}'
+    # Get the caller's function name and line number
+    caller_frame = inspect.stack()[2]
+    fn = f"{obj.__class__.__name__ + '.' if obj else ''}{caller_frame.function}"  # [2] to get caller function
+    line_number = caller_frame.lineno
+    signature = f'[{line_number}]{obj_path}-{fn}' if show_path else f'[{line_number}]{indent}{fn}'
     message = f'{indent}> {msg}' if msg else f'{signature}'
     logger.log(level, message)
 
