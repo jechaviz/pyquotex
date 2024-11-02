@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+
 from bs4 import BeautifulSoup
 from snoop import snoop
 
@@ -19,14 +21,18 @@ class QxMailPinGetter:
       self.imap_client.connect()
       self.imap_client.select_mailbox()
       sender_email = self.settings.get('qx.emails.no_reply')
-      email_uid, raw_email = self.imap_client.get_latest_email_from_sender(sender_email)
-      if not raw_email: return None
-      for html_part in self.imap_client.get_email_text_parts(raw_email):
-        pin = self.extract_pin(html_part)
+      filters = {
+        'contains': 'PIN',
+        'after': datetime.now().strftime('%Y-%m-%d'),
+      }
+      email = self.imap_client.get_latest_email_from(filters, sender_email)
+      if email:
+        pin = self.extract_pin(email.body)
         if pin:
-          self.imap_client.delete_email(email_uid)
+          self.imap_client.delete_email(email.uid)
           return pin
       return None
+
     except Exception as e:
       if 'authentication failed' in str(e):
         print('IMAP authentication failed. Check email and password, or IMAP Access status enabled.')

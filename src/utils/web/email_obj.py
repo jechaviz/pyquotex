@@ -3,11 +3,12 @@ from email.header import decode_header
 from email.utils import parseaddr, getaddresses
 
 
-class Email:
+class EmailObj:
   """Class to represent an email with lazy loading of various parts."""
 
-  def __init__(self, raw_email):
+  def __init__(self, uid, raw_email):
     self.raw_email = raw_email
+    self.uid = uid
     self.msg = email.message_from_bytes(raw_email)
 
   @property
@@ -33,9 +34,14 @@ class Email:
     for part in self.msg.walk():
       if part.get_content_maintype() == 'multipart':
         continue
-      if part.get_content_type() == 'text/plain':
-        parts.append(part.get_payload(decode=True).decode(part.get_content_charset() or 'utf-8'))
-    return "\n".join(parts)
+      if part.get_content_type() == 'text/plain' or part.get_content_type() == 'text/html':
+        charset = part.get_content_charset() or 'utf-8'
+        try:
+          content = part.get_payload(decode=True).decode(charset)
+          parts.append(content)
+        except Exception as e:
+          print(f"Error decoding part: {e}")
+    return "\n".join(parts) if parts else "No body content available"
 
   @property
   def attachments(self):
