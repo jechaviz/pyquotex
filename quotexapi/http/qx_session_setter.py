@@ -36,9 +36,13 @@ class QxSessionSetter:
             await self._fill_sign_in_form()
             await self._submit_sign_in_form()
 
+    async def _fill_field_by_css(self, css, value, index=0):
+        await self.browser.page.locator(css).nth(index).fill(value)
+        await self.browser.page.locator(css).nth(index).press('Enter')
+
     async def _fill_sign_in_form(self):
-        await self._fill_field_by_role('textbox', 'Email', self.qx_email)
-        await self._fill_field_by_role('textbox', 'Password', self.qx_pass)
+        await self._fill_field_by_css('#tab-1 input[name=email]', self.qx_email)
+        await self._fill_field_by_css('#tab-1 input[name=password]', self.qx_pass)
 
     async def _submit_sign_in_form(self):
         await self.browser.page.get_by_role('button', name='Sign In').click()
