@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from src.api.session.qx_session_manager import QxSessionManager
 from src.api.websocket.qx_ws_msg_handler import QxWsMsgHandler
@@ -14,7 +15,7 @@ class QxWsClient(DefaultWebsocketClient):
       ws_api_section_name_in_settings_file='qx',
       ws_state=state,
       session_manager=QxSessionManager(settings),
-      api_actions_config_file='qx_ws_api.yml',
+      api_actions_config_file= os.path.join(os.path.dirname(__file__), 'qx_ws_api.yml'),
       ws_msg_handler=QxWsMsgHandler(state))
 
 async def main():
