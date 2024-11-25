@@ -148,8 +148,7 @@ class QxBrowserLogin:
       await self.set_cookies()
       await self.set_user_agent()
       self.session_data['timestamp'] = time.time()
-      # human readable time
-      self.session_data['time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.session_data['time']))
+      self.session_data['time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.session_data['timestamp']))
     else:
       tree.error(self, 'Session ID not found')
       raise Exception()
