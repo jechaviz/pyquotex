@@ -47,11 +47,10 @@ The `requirements.txt` file lists the dependencies used by PyQuotex.  Here's a b
 
 * **`beautifulsoup4`:** Used for parsing HTML content, specifically for extracting data from web pages, such as login forms and email content.
 * **`certifi`:** Provides root certificates for verifying SSL connections.
-* **`chevron`:**  (Likely) Used for data serialization/deserialization, potentially for handling complex data structures.
-* **`pandas`:**  (Likely) Used for data manipulation and analysis, potentially for handling financial data.
+* **`chevron`:**  Used to parse various template files.
+* **`pandas`:**  For data manipulation, analysis and handling financial data.
 * **`paprika`:** Used for the `@singleton` decorator, ensuring that certain classes are instantiated only once.
-* **`playwright`:**  Crucial for browser automation, enabling the library to interact with the Quotex website.
-* **`pyfiglet`:** (Likely) Used for generating ASCII art, potentially for display purposes.
+* **`playwright`:**  Browser automation, enabling the library to interact with the Quotex website.
 * **`pyperclip`:** Used for copying and pasting text, likely for handling 2FA codes.
 * **`pytz`:** Used for handling time zones, crucial for accurate time-based operations.
 * **`PyYAML`:** Used for loading configuration data from the YAML file (`config.yml`).
