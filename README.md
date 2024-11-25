@@ -39,7 +39,7 @@ This library aims to provide a robust and flexible framework for automated tradi
    
 ## Usage
 
-`python ./src/api/websocket/qx_ws_client.py`
+`python ./main.py`
 
 ## Dependencies and Their Use
 
